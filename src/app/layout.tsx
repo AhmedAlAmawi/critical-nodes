@@ -22,9 +22,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Critical Nodes — AI Render Studio",
+  title: "Critical Nodes — Visualization Edition",
   description:
-    "Transform architectural 3D models into photorealistic renders with Gemini AI.",
+    "A cognitive discipline system for AI-mediated architectural representation.",
 };
 
 export default function RootLayout({
@@ -35,7 +35,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${outfit.variable} ${playfair.variable} ${geistMono.variable} dark h-full`}
+      className={`${outfit.variable} ${playfair.variable} ${geistMono.variable} h-full`}
     >
       <body className="min-h-full bg-canvas text-foreground antialiased">
         <TooltipProvider delay={200}>{children}</TooltipProvider>

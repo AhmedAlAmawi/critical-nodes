@@ -63,7 +63,7 @@ export default function GalleryPage() {
   return (
     <AppContext.Provider value={{ state, dispatch }}>
       <div className="h-screen overflow-hidden p-2.5 pt-[52px]">
-        <main className="h-full overflow-y-auto scrollbar-thin rounded-2xl bg-background border border-white/[0.07] shadow-[0_2px_20px_rgba(0,0,0,0.3)]">
+        <main className="h-full overflow-y-auto scrollbar-thin rounded-2xl bg-background border border-border shadow-[0_2px_16px_rgba(0,0,0,0.06)]">
           <div className="max-w-5xl mx-auto px-8 py-10">
             <RenderHistory
               history={state.history}
