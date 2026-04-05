@@ -4,26 +4,38 @@ import { createContext, useContext } from "react";
 
 // --- Node Types ---
 
-export type NodeId = "intent" | "materials" | "lighting" | "references" | "prompt" | "audit";
+export type NodeId = "intent" | "visualPriority" | "references" | "geometry" | "materialsLight" | "prompt" | "audit";
 
-export const NODE_ORDER: NodeId[] = ["intent", "materials", "lighting", "references", "prompt", "audit"];
+export const NODE_ORDER: NodeId[] = ["intent", "visualPriority", "references", "geometry", "materialsLight", "prompt", "audit"];
 
 export const NODE_LABELS: Record<NodeId, string> = {
-  intent: "Intent Definition",
-  materials: "Material Logic",
-  lighting: "Light & Atmosphere",
+  intent: "Design Mentor",
+  visualPriority: "Visual Priority",
   references: "Reference Deconstruction",
+  geometry: "Geometry & View",
+  materialsLight: "Material & Light",
   prompt: "Prompt Architecture",
   audit: "Alignment Audit",
 };
 
 export const NODE_DESCRIPTIONS: Record<NodeId, string> = {
-  intent: "Define the foundational intent of this visualization. Every subsequent decision is validated against the intent created here.",
-  materials: "Justify every material choice. No aesthetic-only answers — connect each material to the user, the concept, and the light.",
-  lighting: "Control the atmosphere deliberately. Choose lighting that reinforces the emotional intent of the space.",
-  references: "Deconstruct your references analytically. Identify exactly what you are borrowing — and what you are not.",
-  prompt: "Construct the prompt using structured fields. Upload your model, configure output, and generate.",
-  audit: "Validate the render against your declared intent. Identify mismatches and refine if needed.",
+  intent: "Articulate the foundational intent of your visualization through guided reflection. This becomes the anchor for every decision that follows.",
+  visualPriority: "Identify which space or moment in your project best embodies your concept. Define what deserves to be visualized and why.",
+  references: "Deconstruct your references analytically. Identify exactly what you are borrowing — and what you are not — and verify alignment with your intent.",
+  geometry: "Upload your 3D model and validate the camera view against your references. Once confirmed, this geometry guides all subsequent visualization decisions.",
+  materialsLight: "Justify every material choice and define your lighting logic. Connect each decision to the user, the concept, and the spatial intent.",
+  prompt: "Construct the prompt using the structure-reference-vision hierarchy. Review prior decisions and generate your visualization.",
+  audit: "Reflect on the render against your declared intent. Identify what aligns, what is inconsistent, and how it could be improved.",
+};
+
+export const NODE_TIPS: Record<NodeId, string> = {
+  intent: "Think like a design mentor — not filling a form, but articulating why this visualization matters.",
+  visualPriority: "Ask yourself: if I could only show one moment of this project, what would it be?",
+  references: "Be surgical. Don't borrow vibes — borrow specific compositional, tonal, or material strategies.",
+  geometry: "Your camera is a design decision. The angle you choose determines what the viewer understands.",
+  materialsLight: "Materials and light are inseparable. A material only exists as light reveals it.",
+  prompt: "The prompt assembles your declared decisions. Review each section before generating.",
+  audit: "Honest reflection here teaches more than the render itself. What did the AI understand? What did it miss?",
 };
 
 // --- Image Types ---
@@ -54,6 +66,20 @@ export type GeminiModel =
 
 // --- Node Data Types ---
 
+export interface SocraticResponses {
+  spatialMechanism: string;
+  visualMoment: string;
+  oppositeDescription: string;
+  failureScenario: string;
+}
+
+export interface ConceptClaritySummary {
+  wellDefined: string[];
+  ambiguous: string[];
+  suggestions: string[];
+  readings: string[];
+}
+
 export interface IntentData {
   conceptStatement: string;
   targetUser: string;
@@ -62,26 +88,29 @@ export interface IntentData {
   behaviorReinforcement: string;
   imageType: "documentary" | "atmospheric" | "material-focused" | "narrative" | "";
   intentStatement: string;
+  socraticResponses?: SocraticResponses;
+  conceptSketchBase64?: string | null;
 }
 
-export interface MaterialJustification {
-  id: string;
-  materialName: string;
-  whyForUser: string;
-  tactileQuality: string;
-  lightBehavior: string;
-  culturalCoherence: string;
-  conceptReinforcement: string;
+export interface VisualPriorityData {
+  primaryFocusArea: string;
+  secondaryFocusArea: string;
+  sequenceThreshold: string;
+  visualizationTarget: string;
+  sketchBase64: string | null;
+  sketchFeedback: string | null;
 }
 
-export interface LightingData {
-  timeOfDay: string;
-  lightSource: "natural" | "artificial" | "mixed" | "";
-  contrastLevel: string;
-  shadowIntention: string;
-  moodProduced: string;
-  preset: "overcast" | "golden-hour" | "high-contrast" | "flat-documentary" | "custom" | "";
-}
+export const BORROWING_CATEGORIES = [
+  "Camera angle",
+  "Lighting",
+  "Material palette",
+  "Composition",
+  "Spatial hierarchy",
+  "Mood",
+] as const;
+
+export type BorrowingCategory = typeof BORROWING_CATEGORIES[number];
 
 export interface ReferenceBreakdown {
   id: string;
@@ -92,6 +121,35 @@ export interface ReferenceBreakdown {
   colorTemperature: string;
   notBorrowing: string;
   emotion: string;
+  borrowingCategories: BorrowingCategory[];
+  annotationSketchBase64?: string | null;
+  annotationFeedback?: string | null;
+}
+
+export interface GeometryValidationData {
+  cameraRelationship: "similar" | "different" | "";
+  cameraJustification: string;
+  validated: boolean;
+}
+
+export interface MaterialJustification {
+  id: string;
+  materialName: string;
+  whyForUser: string;
+  tactileQuality: string;
+  lightBehavior: string;
+  culturalCoherence: string;
+  conceptReinforcement: string;
+  zone: string;
+}
+
+export interface LightingData {
+  timeOfDay: string;
+  lightSource: "natural" | "artificial" | "mixed" | "";
+  contrastLevel: string;
+  shadowIntention: string;
+  moodProduced: string;
+  preset: "overcast" | "golden-hour" | "high-contrast" | "flat-documentary" | "custom" | "";
 }
 
 export interface PromptFields {
@@ -105,14 +163,21 @@ export interface PromptFields {
 }
 
 export interface AuditData {
-  intentCommunicated: boolean | null;
-  focalHierarchy: string;
-  materialRealism: boolean | null;
-  lightingContradiction: boolean | null;
-  accidentalElements: string;
+  alignsWellWithIntent: string;
+  inconsistentPart: string;
+  improvementSuggestion: string;
   mismatches: [string, string, string];
-  refined: boolean;
+  refinementCount: number;
 }
+
+export interface NodeRevision {
+  timestamp: number;
+  snapshot: unknown;
+}
+
+// --- Node Status ---
+
+export type NodeStatus = "empty" | "partial" | "complete" | "skipped";
 
 // --- Session Type ---
 
@@ -121,12 +186,17 @@ export interface Session {
   name: string;
   currentNode: NodeId;
   intent: IntentData | null;
+  conceptClaritySummary: ConceptClaritySummary | null;
+  visualPriority: VisualPriorityData | null;
+  referenceBreakdowns: ReferenceBreakdown[];
+  geometryValidation: GeometryValidationData | null;
   materialJustifications: MaterialJustification[];
   lighting: LightingData | null;
-  referenceBreakdowns: ReferenceBreakdown[];
   promptFields: PromptFields | null;
   audit: AuditData | null;
   renderThumbnail: string | null;
+  skippedNodes: NodeId[];
+  nodeRevisions: Record<string, NodeRevision[]>;
   createdAt: number;
   updatedAt: number;
   completedAt: number | null;
@@ -134,9 +204,9 @@ export interface Session {
 
 // --- Helpers ---
 
-export function canAccessNode(session: Session | null, targetNode: NodeId): boolean {
-  if (!session) return false;
-  return NODE_ORDER.indexOf(targetNode) <= NODE_ORDER.indexOf(session.currentNode);
+export function canAccessNode(_session: Session | null, _targetNode: NodeId): boolean {
+  if (!_session) return false;
+  return true;
 }
 
 export function getNextNode(currentNode: NodeId): NodeId | null {
@@ -155,12 +225,17 @@ export function createEmptySession(name?: string): Session {
     name: name || `Session ${new Date().toLocaleDateString()}`,
     currentNode: "intent",
     intent: null,
+    conceptClaritySummary: null,
+    visualPriority: null,
+    referenceBreakdowns: [],
+    geometryValidation: null,
     materialJustifications: [],
     lighting: null,
-    referenceBreakdowns: [],
     promptFields: null,
     audit: null,
     renderThumbnail: null,
+    skippedNodes: [],
+    nodeRevisions: {},
     createdAt: Date.now(),
     updatedAt: Date.now(),
     completedAt: null,
@@ -170,7 +245,56 @@ export function createEmptySession(name?: string): Session {
 export function isNodeComplete(session: Session, node: NodeId): boolean {
   const nodeIdx = NODE_ORDER.indexOf(node);
   const currentIdx = NODE_ORDER.indexOf(session.currentNode);
-  return nodeIdx < currentIdx;
+  if (nodeIdx < currentIdx) return true;
+  return getNodeStatus(session, node) === "complete";
+}
+
+export function getNodeStatus(session: Session, node: NodeId): NodeStatus {
+  if (session.skippedNodes.includes(node)) return "skipped";
+
+  switch (node) {
+    case "intent":
+      if (!session.intent) return "empty";
+      if (session.intent.intentStatement.trim().length > 0) return "complete";
+      return "partial";
+    case "visualPriority":
+      if (!session.visualPriority) return "empty";
+      if (session.visualPriority.visualizationTarget.trim().length > 0) return "complete";
+      return "partial";
+    case "references":
+      if (session.referenceBreakdowns.length === 0) return "empty";
+      return "complete";
+    case "geometry":
+      if (!session.geometryValidation) return "empty";
+      if (session.geometryValidation.validated) return "complete";
+      return "partial";
+    case "materialsLight":
+      if (session.materialJustifications.length === 0 && !session.lighting) return "empty";
+      if (session.materialJustifications.length > 0 && session.lighting) return "complete";
+      return "partial";
+    case "prompt":
+      if (!session.promptFields) return "empty";
+      return "complete";
+    case "audit":
+      if (!session.audit) return "empty";
+      if (session.audit.alignsWellWithIntent.trim().length > 0) return "complete";
+      return "partial";
+    default:
+      return "empty";
+  }
+}
+
+export function getSkipDiagnostic(node: NodeId): string {
+  const diagnostics: Record<NodeId, string> = {
+    intent: "Intent is incomplete. Without a clear intent, subsequent visualization decisions lack an anchor for alignment.",
+    visualPriority: "Visual priority is undefined. Identifying what deserves visualization helps focus material, lighting, and composition choices.",
+    references: "References are missing. Analytical reference deconstruction strengthens deliberate visual borrowing in the final render.",
+    geometry: "Geometry is not validated. Confirming your camera view ensures the render preserves your spatial intentions.",
+    materialsLight: "Material and lighting logic is incomplete. These directly determine the visual quality and atmosphere of the render.",
+    prompt: "Prompt architecture is incomplete. The structured prompt ensures your declared decisions translate accurately to the AI render.",
+    audit: "Alignment audit is incomplete. Honest post-render reflection is where the deepest learning occurs.",
+  };
+  return diagnostics[node];
 }
 
 // --- App State ---
@@ -179,10 +303,12 @@ export interface AppState {
   sessions: Session[];
   activeSessionId: string | null;
   activeNode: NodeId;
+  showExitSummary: NodeId | null;
 
   modelImage: UploadedImage | null;
   materialImages: UploadedImage[];
   referenceImages: UploadedImage[];
+  sketchImages: UploadedImage[];
 
   prompt: string;
   aspectRatio: "16:9" | "9:16" | "4:3" | "3:4" | "1:1";
@@ -204,14 +330,20 @@ export type AppAction =
   | { type: "LOAD_SESSIONS"; payload: Session[] }
   | { type: "SET_ACTIVE_NODE"; payload: NodeId }
   | { type: "ADVANCE_NODE" }
+  | { type: "SKIP_NODE"; payload: NodeId }
   | { type: "REFINE_RENDER" }
   | { type: "COMPLETE_SESSION" }
+  | { type: "SHOW_EXIT_SUMMARY"; payload: NodeId | null }
   | { type: "SET_INTENT_DATA"; payload: IntentData }
+  | { type: "SET_CONCEPT_CLARITY_SUMMARY"; payload: ConceptClaritySummary }
+  | { type: "SET_VISUAL_PRIORITY_DATA"; payload: VisualPriorityData }
   | { type: "SET_MATERIAL_JUSTIFICATIONS"; payload: MaterialJustification[] }
   | { type: "SET_LIGHTING_DATA"; payload: LightingData }
   | { type: "SET_REFERENCE_BREAKDOWNS"; payload: ReferenceBreakdown[] }
+  | { type: "SET_GEOMETRY_VALIDATION"; payload: GeometryValidationData }
   | { type: "SET_PROMPT_FIELDS"; payload: PromptFields }
   | { type: "SET_AUDIT_DATA"; payload: AuditData }
+  | { type: "SAVE_NODE_REVISION"; payload: { nodeId: string; snapshot: unknown } }
   | { type: "SET_MODEL_IMAGE"; payload: UploadedImage | null }
   | { type: "UPDATE_MODEL_IMAGE"; payload: Partial<UploadedImage> }
   | { type: "ADD_MATERIAL_IMAGE"; payload: UploadedImage }
@@ -220,6 +352,8 @@ export type AppAction =
   | { type: "ADD_REFERENCE_IMAGE"; payload: UploadedImage }
   | { type: "REMOVE_REFERENCE_IMAGE"; payload: string }
   | { type: "UPDATE_REFERENCE_IMAGE"; payload: { id: string } & Partial<UploadedImage> }
+  | { type: "ADD_SKETCH_IMAGE"; payload: UploadedImage }
+  | { type: "REMOVE_SKETCH_IMAGE"; payload: string }
   | { type: "SET_PROMPT"; payload: string }
   | { type: "SET_ASPECT_RATIO"; payload: AppState["aspectRatio"] }
   | { type: "SET_IMAGE_SIZE"; payload: AppState["imageSize"] }
@@ -236,10 +370,12 @@ export const initialState: AppState = {
   sessions: [],
   activeSessionId: null,
   activeNode: "intent",
+  showExitSummary: null,
 
   modelImage: null,
   materialImages: [],
   referenceImages: [],
+  sketchImages: [],
 
   prompt: "",
   aspectRatio: "16:9",
@@ -274,9 +410,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         sessions: [session, ...state.sessions],
         activeSessionId: session.id,
         activeNode: "intent",
+        showExitSummary: null,
         modelImage: null,
         materialImages: [],
         referenceImages: [],
+        sketchImages: [],
         prompt: "",
         renderResult: null,
         renderMimeType: null,
@@ -294,9 +432,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           ? {
               activeSessionId: null,
               activeNode: "intent" as NodeId,
+              showExitSummary: null,
               modelImage: null,
               materialImages: [],
               referenceImages: [],
+              sketchImages: [],
               prompt: "",
               renderResult: null,
               renderMimeType: null,
@@ -311,9 +451,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           ...state,
           activeSessionId: null,
           activeNode: "intent",
+          showExitSummary: null,
           modelImage: null,
           materialImages: [],
           referenceImages: [],
+          sketchImages: [],
           prompt: "",
           renderResult: null,
           renderMimeType: null,
@@ -327,9 +469,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         activeSessionId: action.payload,
         activeNode: session.currentNode,
+        showExitSummary: null,
         modelImage: null,
         materialImages: [],
         referenceImages: [],
+        sketchImages: [],
         prompt: "",
         renderResult: null,
         renderMimeType: null,
@@ -343,9 +487,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     // --- Node navigation ---
     case "SET_ACTIVE_NODE": {
-      const session = getActiveSession(state);
-      if (!session || !canAccessNode(session, action.payload)) return state;
-      return { ...state, activeNode: action.payload };
+      return { ...state, activeNode: action.payload, showExitSummary: null };
     }
 
     case "ADVANCE_NODE": {
@@ -356,18 +498,41 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...updateActiveSession(state, (s) => ({ ...s, currentNode: next })),
         activeNode: next,
+        showExitSummary: session.currentNode,
+      };
+    }
+
+    case "SKIP_NODE": {
+      const session = getActiveSession(state);
+      if (!session) return state;
+      const skippedNode = action.payload;
+      const next = getNextNode(skippedNode);
+      const newSkipped = session.skippedNodes.includes(skippedNode)
+        ? session.skippedNodes
+        : [...session.skippedNodes, skippedNode];
+      const nextNode = next || session.currentNode;
+      const advanceCurrent = NODE_ORDER.indexOf(nextNode) > NODE_ORDER.indexOf(session.currentNode);
+      return {
+        ...updateActiveSession(state, (s) => ({
+          ...s,
+          skippedNodes: newSkipped,
+          ...(advanceCurrent ? { currentNode: nextNode } : {}),
+        })),
+        activeNode: nextNode,
+        showExitSummary: skippedNode,
       };
     }
 
     case "REFINE_RENDER": {
       const session = getActiveSession(state);
-      if (!session || session.currentNode !== "audit") return state;
+      if (!session) return state;
       return {
         ...updateActiveSession(state, (s) => ({
           ...s,
-          audit: s.audit ? { ...s.audit, refined: true } : null,
+          audit: s.audit ? { ...s.audit, refinementCount: s.audit.refinementCount + 1 } : null,
         })),
         activeNode: "prompt",
+        showExitSummary: null,
         renderResult: null,
         renderMimeType: null,
         renderError: null,
@@ -378,9 +543,18 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case "COMPLETE_SESSION":
       return updateActiveSession(state, (s) => ({ ...s, completedAt: Date.now() }));
 
+    case "SHOW_EXIT_SUMMARY":
+      return { ...state, showExitSummary: action.payload };
+
     // --- Node data ---
     case "SET_INTENT_DATA":
       return updateActiveSession(state, (s) => ({ ...s, intent: action.payload }));
+
+    case "SET_CONCEPT_CLARITY_SUMMARY":
+      return updateActiveSession(state, (s) => ({ ...s, conceptClaritySummary: action.payload }));
+
+    case "SET_VISUAL_PRIORITY_DATA":
+      return updateActiveSession(state, (s) => ({ ...s, visualPriority: action.payload }));
 
     case "SET_MATERIAL_JUSTIFICATIONS":
       return updateActiveSession(state, (s) => ({ ...s, materialJustifications: action.payload }));
@@ -391,11 +565,22 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case "SET_REFERENCE_BREAKDOWNS":
       return updateActiveSession(state, (s) => ({ ...s, referenceBreakdowns: action.payload }));
 
+    case "SET_GEOMETRY_VALIDATION":
+      return updateActiveSession(state, (s) => ({ ...s, geometryValidation: action.payload }));
+
     case "SET_PROMPT_FIELDS":
       return updateActiveSession(state, (s) => ({ ...s, promptFields: action.payload }));
 
     case "SET_AUDIT_DATA":
       return updateActiveSession(state, (s) => ({ ...s, audit: action.payload }));
+
+    case "SAVE_NODE_REVISION":
+      return updateActiveSession(state, (s) => {
+        const revisions = { ...s.nodeRevisions };
+        const key = action.payload.nodeId;
+        revisions[key] = [...(revisions[key] || []), { timestamp: Date.now(), snapshot: action.payload.snapshot }];
+        return { ...s, nodeRevisions: revisions };
+      });
 
     // --- Images ---
     case "SET_MODEL_IMAGE":
@@ -426,6 +611,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           i.id === action.payload.id ? { ...i, ...action.payload } : i
         ),
       };
+    case "ADD_SKETCH_IMAGE":
+      return { ...state, sketchImages: [...state.sketchImages, action.payload] };
+    case "REMOVE_SKETCH_IMAGE":
+      return { ...state, sketchImages: state.sketchImages.filter((i) => i.id !== action.payload) };
 
     // --- Render config ---
     case "SET_PROMPT":
@@ -478,7 +667,7 @@ export function useApp() {
 
 // --- Persistence ---
 
-const SESSIONS_KEY = "cn_sessions";
+const SESSIONS_KEY = "cn_sessions_v2";
 const HISTORY_KEY = "render_history";
 
 export function loadSessions(): Session[] {

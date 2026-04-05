@@ -13,6 +13,7 @@ export function assemblePrompt(session: Session, promptFields: PromptFields): st
   lines.push("You are rendering a photorealistic architectural visualization.");
   lines.push("");
 
+  // --- Pillar 1: Structure ---
   if (session.intent) {
     lines.push("[INTENT]");
     lines.push(`Concept: ${session.intent.conceptStatement}`);
@@ -24,6 +25,50 @@ export function assemblePrompt(session: Session, promptFields: PromptFields): st
     lines.push("");
   }
 
+  if (session.visualPriority) {
+    lines.push("[VISUALIZATION TARGET]");
+    lines.push(`Primary focus: ${session.visualPriority.primaryFocusArea}`);
+    if (session.visualPriority.secondaryFocusArea) {
+      lines.push(`Secondary focus: ${session.visualPriority.secondaryFocusArea}`);
+    }
+    if (session.visualPriority.sequenceThreshold) {
+      lines.push(`Sequence/threshold: ${session.visualPriority.sequenceThreshold}`);
+    }
+    lines.push(`Visualization target: ${session.visualPriority.visualizationTarget}`);
+    lines.push("");
+  }
+
+  if (session.geometryValidation) {
+    lines.push("[GEOMETRY & CAMERA]");
+    if (session.geometryValidation.cameraRelationship) {
+      lines.push(`Camera view: intentionally ${session.geometryValidation.cameraRelationship} to reference`);
+    }
+    if (session.geometryValidation.cameraJustification) {
+      lines.push(`Camera justification: ${session.geometryValidation.cameraJustification}`);
+    }
+    lines.push("");
+  }
+
+  // --- Pillar 2: Reference ---
+  if (session.referenceBreakdowns.length > 0) {
+    lines.push("[REFERENCES]");
+    session.referenceBreakdowns.forEach((r, i) => {
+      lines.push(`Reference ${i + 1}:`);
+      lines.push(`  Lens: ${r.lens}`);
+      lines.push(`  Framing: ${r.framing}`);
+      lines.push(`  Tone: ${r.tone}`);
+      lines.push(`  Grain: ${r.grain}`);
+      lines.push(`  Color temperature: ${r.colorTemperature}`);
+      lines.push(`  Emotion: ${r.emotion}`);
+      lines.push(`  NOT borrowing: ${r.notBorrowing}`);
+      if (r.borrowingCategories && r.borrowingCategories.length > 0) {
+        lines.push(`  Borrowing: ${r.borrowingCategories.join(", ")}`);
+      }
+    });
+    lines.push("");
+  }
+
+  // --- Pillar 3: Vision ---
   if (session.materialJustifications.length > 0) {
     lines.push("[MATERIALS]");
     session.materialJustifications.forEach((m, i) => {
@@ -31,6 +76,9 @@ export function assemblePrompt(session: Session, promptFields: PromptFields): st
       lines.push(`  Purpose: ${m.whyForUser}`);
       lines.push(`  Tactile: ${m.tactileQuality}`);
       lines.push(`  Light behavior: ${m.lightBehavior}`);
+      if (m.zone) {
+        lines.push(`  Zone: ${m.zone}`);
+      }
     });
     lines.push("");
   }
@@ -48,21 +96,6 @@ export function assemblePrompt(session: Session, promptFields: PromptFields): st
     lines.push("");
   }
 
-  if (session.referenceBreakdowns.length > 0) {
-    lines.push("[REFERENCES]");
-    session.referenceBreakdowns.forEach((r, i) => {
-      lines.push(`Reference ${i + 1}:`);
-      lines.push(`  Lens: ${r.lens}`);
-      lines.push(`  Framing: ${r.framing}`);
-      lines.push(`  Tone: ${r.tone}`);
-      lines.push(`  Grain: ${r.grain}`);
-      lines.push(`  Color temperature: ${r.colorTemperature}`);
-      lines.push(`  Emotion: ${r.emotion}`);
-      lines.push(`  NOT borrowing: ${r.notBorrowing}`);
-    });
-    lines.push("");
-  }
-
   lines.push("[PROMPT ARCHITECTURE]");
   lines.push(`Lens: ${promptFields.lens}`);
   lines.push(`Lighting: ${promptFields.lighting}`);
@@ -73,10 +106,19 @@ export function assemblePrompt(session: Session, promptFields: PromptFields): st
   lines.push(`Resolution: ${promptFields.resolution}`);
   lines.push("");
 
-  lines.push("The first image is a 3D model screenshot that defines the spatial layout, geometry, and camera angle.");
-  lines.push("Maintain the exact camera angle and spatial proportions from the 3D model.");
+  lines.push("[CRITICAL GEOMETRY CONSTRAINTS]");
+  lines.push("The first image is a 3D model screenshot that defines the EXACT spatial layout, geometry, camera angle, and proportions.");
+  lines.push("You MUST treat this 3D model as the absolute ground truth for all geometry.");
+  lines.push("DO NOT alter, add, remove, or reinterpret ANY architectural elements, walls, openings, structural members, floor levels, ceiling heights, or spatial boundaries.");
+  lines.push("DO NOT hallucinate or invent geometry that is not present in the 3D model — every wall, column, slab, opening, and surface must match the model EXACTLY.");
+  lines.push("DO NOT change the camera angle, field of view, perspective distortion, or spatial proportions from the 3D model.");
+  lines.push("DO NOT add windows, doors, furniture, objects, people, or landscape elements unless they are explicitly visible in the 3D model screenshot.");
+  lines.push("The 3D model geometry is LOCKED — your only job is to apply materials, lighting, and atmosphere to the EXISTING geometry.");
+  lines.push("");
+  lines.push("[RENDERING INSTRUCTIONS]");
   lines.push("Apply all declared materials, lighting, and atmospheric choices to produce a photorealistic result.");
   lines.push("Ensure the render communicates the declared emotional atmosphere and intent.");
+  lines.push("The final image must be indistinguishable in spatial layout from the provided 3D model — only surface treatment, lighting, and atmosphere should change.");
 
   return lines.join("\n");
 }

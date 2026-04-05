@@ -1,0 +1,52 @@
+{
+  "references": [
+    {
+      "id": "ref-001",
+      "title": "Peter Zumthor — Therme Vals",
+      "description": "Masterful use of natural stone with precise directional lighting. Demonstrates how material texture is revealed through light angle and shadow depth.",
+      "tags": ["material behavior", "light strategy", "spatial intention"]
+    },
+    {
+      "id": "ref-002",
+      "title": "Hélène Binet — Architectural Photography",
+      "description": "Dramatic use of shadow and grain to communicate spatial weight. Low camera angles emphasize material presence.",
+      "tags": ["camera angle", "light strategy", "material behavior"]
+    },
+    {
+      "id": "ref-003",
+      "title": "Tadao Ando — Church of the Light",
+      "description": "Singular light source as spatial device. Concrete material responds to directional light with subtle tonal gradients.",
+      "tags": ["light strategy", "spatial intention", "material behavior"]
+    },
+    {
+      "id": "ref-004",
+      "title": "Sigurd Lewerentz — St. Peter's, Klippan",
+      "description": "Dark brick with minimal openings. Light becomes sculptural — each window is a compositional decision.",
+      "tags": ["light strategy", "spatial intention", "camera angle"]
+    },
+    {
+      "id": "ref-005",
+      "title": "Studio Mumbai — Palmyra House",
+      "description": "Warm timber with tropical diffused light. Material palette of 2-3 elements creates hierarchy without competition.",
+      "tags": ["material behavior", "light strategy", "spatial intention"]
+    },
+    {
+      "id": "ref-006",
+      "title": "Ludwig Mies van der Rohe — Barcelona Pavilion",
+      "description": "Reflective materials (marble, chrome, glass) under controlled natural light. Demonstrates material-light interaction complexity.",
+      "tags": ["material behavior", "light strategy", "camera angle"]
+    },
+    {
+      "id": "ref-007",
+      "title": "John Pawson — Minimalist Residential",
+      "description": "Neutral palette with emphasis on spatial proportion. Even, soft lighting reveals volume rather than texture.",
+      "tags": ["spatial intention", "light strategy", "camera angle"]
+    },
+    {
+      "id": "ref-008",
+      "title": "Iwan Baan — Documentary Architectural Photography",
+      "description": "Flat, honest documentation light. Wide angles capture spatial relationships without atmospheric distortion.",
+      "tags": ["camera angle", "light strategy", "spatial intention"]
+    }
+  ]
+}
