@@ -100,7 +100,11 @@ const DOWNSTREAM_IMPACT: Record<NodeId, string> = {
   audit: "Reflection closes the learning loop. Identifying mismatches teaches you to make better declarations next time.",
 };
 
-export function NodeExitSummary() {
+interface NodeExitSummaryProps {
+  onContinue?: (nextNode: NodeId) => void;
+}
+
+export function NodeExitSummary({ onContinue }: NodeExitSummaryProps) {
   const { state, dispatch } = useApp();
   const session = getActiveSession(state);
   const exitNode = state.showExitSummary;
@@ -189,7 +193,10 @@ export function NodeExitSummary() {
           </div>
 
           <Button
-            onClick={() => dispatch({ type: "SHOW_EXIT_SUMMARY", payload: null })}
+            onClick={() => {
+              dispatch({ type: "SHOW_EXIT_SUMMARY", payload: null });
+              if (nextNode && onContinue) onContinue(nextNode);
+            }}
             className="w-full h-10 bg-foreground text-background hover:bg-foreground/90 font-medium text-[13px] gap-2"
           >
             {nextNode ? (

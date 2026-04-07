@@ -1,6 +1,7 @@
 "use client";
 
 import { useReducer, useEffect, useState, useCallback } from "react";
+import { Wand2 } from "lucide-react";
 import {
   AppContext,
   appReducer,
@@ -71,7 +72,7 @@ export default function StudioPage() {
     <AppContext.Provider value={{ state, dispatch }}>
       <div className="h-screen overflow-hidden flex flex-col pt-[52px]">
         {/* Living Canvas -- full screen background */}
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden flex flex-col min-h-0">
           {showSessionList ? (
             <LivingCanvas onOpenDrawer={handleOpenDrawer} onOpenRenderFullscreen={() => setRenderFullscreen(true)} />
           ) : (
@@ -98,11 +99,25 @@ export default function StudioPage() {
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       {/* Exit summary modal */}
-      {state.showExitSummary && <NodeExitSummary />}
+      {state.showExitSummary && <NodeExitSummary onContinue={handleOpenDrawer} />}
 
       {/* Render fullscreen lightbox */}
       {renderFullscreen && (
         <RenderResult mode="fullscreen" onClose={() => setRenderFullscreen(false)} />
+      )}
+
+      {/* Dev: Mock Fill button */}
+      {process.env.NODE_ENV === "development" && session && (
+        <button
+          onClick={() => {
+            dispatch({ type: "MOCK_FILL_SESSION" });
+            setDrawerOpen(false);
+          }}
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-mono tracking-wide uppercase bg-warm/10 text-warm border border-warm/20 hover:bg-warm/20 transition-colors shadow-lg backdrop-blur-sm"
+        >
+          <Wand2 className="w-3.5 h-3.5" />
+          Mock Fill
+        </button>
       )}
     </AppContext.Provider>
   );

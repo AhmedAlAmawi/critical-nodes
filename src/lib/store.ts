@@ -364,7 +364,8 @@ export type AppAction =
   | { type: "SET_RENDER_ERROR"; payload: string | null }
   | { type: "CLEAR_RESULT" }
   | { type: "ADD_HISTORY_ITEM"; payload: RenderHistoryItem }
-  | { type: "LOAD_HISTORY"; payload: RenderHistoryItem[] };
+  | { type: "LOAD_HISTORY"; payload: RenderHistoryItem[] }
+  | { type: "MOCK_FILL_SESSION" };
 
 export const initialState: AppState = {
   sessions: [],
@@ -645,6 +646,126 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, history: [action.payload, ...state.history] };
     case "LOAD_HISTORY":
       return { ...state, history: action.payload };
+
+    case "MOCK_FILL_SESSION": {
+      const s = getActiveSession(state);
+      if (!s) return state;
+      return {
+        ...updateActiveSession(state, (sess) => ({
+          ...sess,
+          currentNode: "prompt" as NodeId,
+          intent: {
+            conceptStatement:
+              "A contemplative co-working space that blurs the boundary between interior and landscape, using rammed-earth walls and diffused zenithal light to create an atmosphere of focused calm.",
+            targetUser:
+              "Freelance designers and writers seeking a distraction-free environment that still feels connected to the outdoors.",
+            spatialGoal:
+              "Guide the occupant's gaze from the tactile earth wall surface, across the long communal table, toward the framed garden view — reinforcing a rhythm of focus and release.",
+            emotionalAtmosphere:
+              "Quiet intensity — warm, grounded, and slightly monastic without feeling austere.",
+            behaviorReinforcement:
+              "The narrow field of view and low ambient light encourage deep work, while the single panoramic opening offers periodic visual rest.",
+            imageType: "atmospheric",
+            intentStatement:
+              "This visualization captures the moment when late-afternoon light washes across the rammed-earth wall, casting long soft shadows over the workspace and pulling the viewer's attention toward the garden threshold — embodying the project's core idea that productive solitude and natural presence can coexist.",
+            socraticResponses: {
+              spatialMechanism:
+                "The rammed-earth wall acts as a thermal and visual anchor; its layered texture slows the eye and grounds the occupant before the panoramic opening releases their gaze into the landscape.",
+              visualMoment:
+                "Late afternoon, when a single beam of zenithal light grazes the earth wall and spills warm color across the communal table.",
+              oppositeDescription:
+                "A bright, white-walled open-plan office with uniform fluorescent lighting and floor-to-ceiling glass on all sides — stimulating but relentless.",
+              failureScenario:
+                "If the visualization fails, the space would read as a dim, cave-like room rather than a luminous retreat — losing the duality of enclosure and openness.",
+            },
+          },
+          visualPriority: {
+            primaryFocusArea:
+              "The textured rammed-earth wall catching zenithal light, revealing the horizontal strata of pigmented soil layers.",
+            secondaryFocusArea:
+              "The communal timber table surface with scattered work tools, creating a sense of inhabitation.",
+            sequenceThreshold:
+              "Wall texture → table surface → garden view through the panoramic slot — a three-beat rhythm from near to far.",
+            visualizationTarget:
+              "The interplay between the warm, rough earth wall and the cool, soft garden light entering through the horizontal opening — the exact spatial tension that defines this project.",
+            sketchBase64: null,
+            sketchFeedback: null,
+          },
+          referenceBreakdowns: [
+            {
+              id: crypto.randomUUID(),
+              lens: "Wide establishing shot, 24mm equivalent, slight upward tilt to emphasize wall height",
+              framing: "Two-thirds earth wall on the left, one-third garden opening on the right, table anchoring the lower third",
+              tone: "Warm mid-tones with muted highlights — amber cast from the earth, cooled by reflected garden light",
+              grain: "Fine grain, almost imperceptible — clean enough to read material texture without adding noise",
+              colorTemperature: "Mixed: warm 3200K from the wall reflections, neutral 5500K from the garden daylight",
+              notBorrowing: "Not borrowing the dramatic chiaroscuro or the high-contrast silhouettes — this space requires gentler, more diffused light.",
+              emotion: "Contemplative stillness — the feeling of being sheltered while remaining aware of the world outside",
+              borrowingCategories: ["Lighting", "Material palette", "Spatial hierarchy"],
+            },
+          ],
+          geometryValidation: {
+            cameraRelationship: "similar",
+            cameraJustification:
+              "The camera matches the reference's wide-angle perspective and low horizon line, preserving the spatial hierarchy of wall-table-garden that is central to the design concept.",
+            validated: true,
+          },
+          materialJustifications: [
+            {
+              id: crypto.randomUUID(),
+              materialName: "Rammed Earth Wall",
+              whyForUser:
+                "The layered earth surface provides a tactile, handcrafted quality that signals permanence and care — qualities the target user (focused creative workers) associates with intentional craft.",
+              tactileQuality:
+                "Coarse and stratified with visible aggregate. Cool to the touch. Horizontal striations create a geological rhythm.",
+              lightBehavior:
+                "Absorbs most direct light and scatters it warmly; highlights the grain at grazing angles; deepens to rich sienna in shadow.",
+              culturalCoherence:
+                "Rammed earth has a long vernacular history in arid climates — it signals locality and ecological responsibility.",
+              conceptReinforcement:
+                "The wall's mass and texture embody the project's theme of grounded focus — heavy, stable, and warm.",
+              zone: "Primary wall — west-facing interior surface, floor to ceiling",
+            },
+            {
+              id: crypto.randomUUID(),
+              materialName: "Oiled Timber Tabletop",
+              whyForUser:
+                "Timber offers a warm, forgiving work surface. The oil finish invites touch without feeling precious — supporting the idea that this space is for real, sustained work.",
+              tactileQuality:
+                "Smooth with visible open grain. Slightly warm underhand. Develops a gentle patina over time.",
+              lightBehavior:
+                "Low-sheen reflection; picks up warm overhead light and distributes it softly; grain catches side light.",
+              culturalCoherence:
+                "Solid timber tables reference communal dining and workshop traditions — signals shared endeavor.",
+              conceptReinforcement:
+                "The table is the social and functional heart of the space. Its warmth and scale reinforce collectivity within a quiet atmosphere.",
+              zone: "Central communal table — runs the full length of the room",
+            },
+          ],
+          lighting: {
+            timeOfDay: "Late afternoon, approximately 16:30",
+            lightSource: "natural",
+            contrastLevel:
+              "Moderate — the zenithal slot creates one strong highlight band across the wall, but the rest of the space is gently ambient.",
+            shadowIntention:
+              "Long, soft-edged shadows from the table objects stretching toward the viewer, emphasizing depth and time of day.",
+            moodProduced:
+              "Warm, contemplative, and quietly dramatic — the single light source creates a sense of event without overwhelming the calm.",
+            preset: "golden-hour",
+          },
+          promptFields: {
+            lens: "24mm wide-angle",
+            lighting: "Late-afternoon zenithal light, warm golden-hour tone, single beam grazing the rammed-earth wall",
+            materials: "Rammed earth with visible strata, oiled timber tabletop with open grain, polished concrete floor",
+            cameraHeight: "Seated eye level, approximately 1.1m",
+            mood: "Contemplative, warm, quietly dramatic — focused calm with a sense of natural presence",
+            composition: "Earth wall anchoring left two-thirds, panoramic garden slot on the right, communal table in the lower third",
+            resolution: "4K",
+          },
+        })),
+        activeNode: "prompt",
+      };
+    }
 
     default:
       return state;

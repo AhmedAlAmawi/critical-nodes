@@ -84,18 +84,27 @@ export function PromptArchitecture() {
     dispatch({ type: "SET_PROMPT", payload: systemPrompt });
 
     const geminiKey = getApiKey();
+
+    // Simulated progress that crawls from 35→90% during the long fetch
+    let progress = 35;
+    dispatch({ type: "SET_RENDER_PROGRESS", payload: progress });
+    const progressInterval = setInterval(() => {
+      progress += (92 - progress) * 0.04;
+      dispatch({ type: "SET_RENDER_PROGRESS", payload: Math.round(progress) });
+    }, 1500);
+
     try {
-      dispatch({ type: "SET_RENDER_PROGRESS", payload: 35 });
       const res = await fetch("/api/render", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(geminiKey && { "x-gemini-key": geminiKey }) },
         body: JSON.stringify({ images: processedImages, prompt: systemPrompt, aspectRatio: state.aspectRatio, imageSize: state.imageSize, model: state.geminiModel }),
       });
+      clearInterval(progressInterval);
       const data = await res.json();
       if (data.error) { dispatch({ type: "SET_RENDERING", payload: false }); dispatch({ type: "SET_RENDER_ERROR", payload: data.error }); return; }
 
-      dispatch({ type: "SET_RENDERING", payload: false });
       dispatch({ type: "SET_RENDER_PROGRESS", payload: 100 });
+      dispatch({ type: "SET_RENDERING", payload: false });
       dispatch({ type: "SET_RENDER_RESULT", payload: { image: data.imageBase64, mimeType: data.mimeType } });
       if (session.currentNode === "prompt") dispatch({ type: "ADVANCE_NODE" });
       try {
@@ -103,6 +112,7 @@ export function PromptArchitecture() {
         dispatch({ type: "ADD_HISTORY_ITEM", payload: { id: crypto.randomUUID(), prompt: systemPrompt.slice(0, 200), thumbnail: thumb, fullImage: null, createdAt: Date.now(), model: state.geminiModel, aspectRatio: state.aspectRatio, sessionId: session.id } });
       } catch {}
     } catch (err) {
+      clearInterval(progressInterval);
       dispatch({ type: "SET_RENDERING", payload: false });
       dispatch({ type: "SET_RENDER_ERROR", payload: err instanceof Error ? err.message : "Request failed" });
     }

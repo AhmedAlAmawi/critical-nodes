@@ -234,7 +234,7 @@ export function LivingCanvas({ onOpenDrawer, onOpenRenderFullscreen }: LivingCan
   const hasAudit = !!session.audit;
 
   return (
-    <div className="flex-1 overflow-y-auto scrollbar-thin">
+    <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
       <div className="max-w-5xl mx-auto p-6 pb-20">
         <div className="mb-6">
           <p className="text-[10px] font-mono tracking-wider uppercase text-muted-foreground/40 mb-1">Design Brief</p>
