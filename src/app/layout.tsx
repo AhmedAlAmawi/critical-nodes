@@ -22,9 +22,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Critical Nodes — Visualization Edition",
+  title: "Critical Nodes — Design Visualization Discipline",
   description:
-    "A cognitive discipline system for AI-mediated architectural representation.",
+    "A structured visualization discipline tool that helps students articulate, justify, and align visual decisions when using AI in design education.",
 };
 
 export default function RootLayout({

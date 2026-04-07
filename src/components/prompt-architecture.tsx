@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Layers, Box, ArrowRight, Loader2 } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
+import { Layers, ArrowRight, Loader2, Box, Image as ImageIcon, Eye } from "lucide-react";
 import {
   useApp, getActiveSession,
   type PromptFields, type AppState, type GeminiModel, type UploadedImage,
@@ -10,8 +9,6 @@ import {
 import { assemblePrompt, buildSystemPromptWithImages } from "@/lib/prompt-assembly";
 import { processImageFile, createThumbnail } from "@/lib/image-utils";
 import { validateRequired } from "@/lib/validation";
-import { UploadZone } from "./upload-zone";
-import { ImageThumbnail } from "./image-thumbnail";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -19,18 +16,14 @@ import { NodeShell, ChallengeCard } from "@/components/node-shell";
 
 const emptyFields: PromptFields = { lens: "", lighting: "", materials: "", cameraHeight: "", mood: "", composition: "", resolution: "" };
 
-type FieldErrors = Partial<Record<keyof PromptFields | "model", string[]>>;
+type FieldErrors = Partial<Record<keyof PromptFields, string[]>>;
 
 function getApiKey(): string {
   if (typeof window === "undefined") return "";
   return localStorage.getItem("gemini_api_key") || "";
 }
 
-interface PromptArchitectureProps {
-  onRenderComplete?: () => void;
-}
-
-export function PromptArchitecture({ onRenderComplete }: PromptArchitectureProps) {
+export function PromptArchitecture() {
   const { state, dispatch } = useApp();
   const session = getActiveSession(state);
 
@@ -50,28 +43,13 @@ export function PromptArchitecture({ onRenderComplete }: PromptArchitectureProps
     if (fields.mood.trim()) c++;
     if (fields.composition.trim()) c++;
     if (fields.resolution.trim()) c++;
-    if (state.modelImage) c++;
     return c;
-  }, [fields, state.modelImage]);
+  }, [fields]);
 
   function update<K extends keyof PromptFields>(field: K, value: string) {
     setFields((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: undefined }));
   }
-
-  const handleModelFiles = useCallback((files: File[]) => {
-    const file = files[0];
-    if (!file) return;
-    if (state.modelImage) URL.revokeObjectURL(state.modelImage.preview);
-    const id = crypto.randomUUID();
-    const preview = URL.createObjectURL(file);
-    dispatch({ type: "SET_MODEL_IMAGE", payload: { id, file, preview, base64: null, mimeType: null, processing: false } });
-  }, [state.modelImage, dispatch]);
-
-  const handleRemoveModel = useCallback(() => {
-    if (state.modelImage) URL.revokeObjectURL(state.modelImage.preview);
-    dispatch({ type: "SET_MODEL_IMAGE", payload: null });
-  }, [state.modelImage, dispatch]);
 
   const processImage = useCallback(async (image: UploadedImage): Promise<{ data: string; mimeType: string } | null> => {
     if (image.base64 && image.mimeType) return { data: image.base64, mimeType: image.mimeType };
@@ -85,7 +63,6 @@ export function PromptArchitecture({ onRenderComplete }: PromptArchitectureProps
       const err = validateRequired(v, k);
       if (err) reqErrors[k as keyof PromptFields] = [err];
     }
-    if (!state.modelImage) reqErrors.model = ["Model screenshot is required."];
     if (Object.keys(reqErrors).length > 0) { setErrors(reqErrors); return; }
 
     dispatch({ type: "SET_PROMPT_FIELDS", payload: fields });
@@ -107,26 +84,35 @@ export function PromptArchitecture({ onRenderComplete }: PromptArchitectureProps
     dispatch({ type: "SET_PROMPT", payload: systemPrompt });
 
     const geminiKey = getApiKey();
+
+    // Simulated progress that crawls from 35→90% during the long fetch
+    let progress = 35;
+    dispatch({ type: "SET_RENDER_PROGRESS", payload: progress });
+    const progressInterval = setInterval(() => {
+      progress += (92 - progress) * 0.04;
+      dispatch({ type: "SET_RENDER_PROGRESS", payload: Math.round(progress) });
+    }, 1500);
+
     try {
-      dispatch({ type: "SET_RENDER_PROGRESS", payload: 35 });
       const res = await fetch("/api/render", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(geminiKey && { "x-gemini-key": geminiKey }) },
         body: JSON.stringify({ images: processedImages, prompt: systemPrompt, aspectRatio: state.aspectRatio, imageSize: state.imageSize, model: state.geminiModel }),
       });
+      clearInterval(progressInterval);
       const data = await res.json();
       if (data.error) { dispatch({ type: "SET_RENDERING", payload: false }); dispatch({ type: "SET_RENDER_ERROR", payload: data.error }); return; }
 
-      dispatch({ type: "SET_RENDERING", payload: false });
       dispatch({ type: "SET_RENDER_PROGRESS", payload: 100 });
+      dispatch({ type: "SET_RENDERING", payload: false });
       dispatch({ type: "SET_RENDER_RESULT", payload: { image: data.imageBase64, mimeType: data.mimeType } });
       if (session.currentNode === "prompt") dispatch({ type: "ADVANCE_NODE" });
       try {
         const thumb = await createThumbnail(data.imageBase64, data.mimeType);
         dispatch({ type: "ADD_HISTORY_ITEM", payload: { id: crypto.randomUUID(), prompt: systemPrompt.slice(0, 200), thumbnail: thumb, fullImage: null, createdAt: Date.now(), model: state.geminiModel, aspectRatio: state.aspectRatio, sessionId: session.id } });
       } catch {}
-      onRenderComplete?.();
     } catch (err) {
+      clearInterval(progressInterval);
       dispatch({ type: "SET_RENDERING", payload: false });
       dispatch({ type: "SET_RENDER_ERROR", payload: err instanceof Error ? err.message : "Request failed" });
     }
@@ -136,26 +122,75 @@ export function PromptArchitecture({ onRenderComplete }: PromptArchitectureProps
 
   return (
     <NodeShell
-      number="05"
+      number="06"
       title="Prompt Architecture"
-      description="Fill each field consciously. The system assembles the prompt from all prior nodes plus these structured inputs."
+      description="The prompt assembles your declared decisions using the structure-reference-vision hierarchy. Review each section before generating."
       icon={<Layers className="w-5 h-5 text-warm" />}
-      totalFields={8}
+      totalFields={7}
       completedFields={filledCount}
     >
-      {/* Model upload */}
-      <ChallengeCard label="Model Screenshot" hint="Your 3D model defines the spatial layout and camera angle." filled={!!state.modelImage}>
-        {state.modelImage ? (
-          <AnimatePresence mode="wait">
-            <ImageThumbnail key={state.modelImage.id} src={state.modelImage.preview} alt="3D Model Screenshot" uploading={state.modelImage.processing} onRemove={handleRemoveModel} aspectRatio="aspect-[4/3]" />
-          </AnimatePresence>
-        ) : (
-          <UploadZone onFiles={handleModelFiles} label="Rhino screenshot" sublabel="Drop or click to upload" icon={<div className="w-9 h-9 rounded-md bg-secondary flex items-center justify-center"><Box className="w-4 h-4 text-muted-foreground/60" /></div>} />
-        )}
-        {errors.model?.map((e, i) => <p key={i} className="text-[11px] text-destructive mt-1">{e}</p>)}
-      </ChallengeCard>
+      {/* Pillar 1: Structure (read-only summary from Geometry node) */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Box className="w-3.5 h-3.5 text-warm/70" />
+          <span className="text-[11px] font-mono tracking-wider uppercase text-muted-foreground">Pillar 1: Structure</span>
+        </div>
+        <div className="p-3 rounded-lg bg-foreground/[0.02] border border-foreground/[0.06]">
+          {state.modelImage ? (
+            <div className="space-y-1.5">
+              <p className="text-[11px] text-foreground/70">Model screenshot uploaded</p>
+              {session?.geometryValidation?.cameraRelationship && (
+                <p className="text-[11px] text-foreground/70">
+                  Camera: intentionally <span className="text-warm">{session.geometryValidation.cameraRelationship}</span> to reference
+                </p>
+              )}
+              {session?.geometryValidation?.cameraJustification && (
+                <p className="text-[10px] text-muted-foreground">{session.geometryValidation.cameraJustification}</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">No model uploaded yet. Complete Geometry & View node first.</p>
+          )}
+        </div>
+      </div>
 
-      {/* Structured fields */}
+      {/* Pillar 2: Reference (read-only summary from Reference node) */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <ImageIcon className="w-3.5 h-3.5 text-warm/70" />
+          <span className="text-[11px] font-mono tracking-wider uppercase text-muted-foreground">Pillar 2: Reference</span>
+        </div>
+        <div className="p-3 rounded-lg bg-foreground/[0.02] border border-foreground/[0.06]">
+          {session?.referenceBreakdowns && session.referenceBreakdowns.length > 0 ? (
+            <div className="space-y-2">
+              {session.referenceBreakdowns.map((r, i) => (
+                <div key={r.id} className="space-y-1">
+                  <p className="text-[10px] font-mono text-muted-foreground">Reference {i + 1}</p>
+                  <p className="text-[11px] text-foreground/70">{r.lens} / {r.framing} / {r.tone}</p>
+                  {r.borrowingCategories.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {r.borrowingCategories.map((cat) => (
+                        <span key={cat} className="text-[9px] px-1.5 py-0.5 rounded bg-warm/10 text-warm">{cat}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[11px] text-muted-foreground">No references deconstructed yet.</p>
+          )}
+        </div>
+      </div>
+
+      {/* Pillar 3: Vision (editable fields) */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Eye className="w-3.5 h-3.5 text-warm/70" />
+          <span className="text-[11px] font-mono tracking-wider uppercase text-muted-foreground">Pillar 3: Vision</span>
+        </div>
+      </div>
+
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <ChallengeCard label="Lens" filled={!!fields.lens.trim()} errors={errors.lens}>
@@ -207,6 +242,12 @@ export function PromptArchitecture({ onRenderComplete }: PromptArchitectureProps
         <Button onClick={handleRender} disabled={!canRender} className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 font-medium text-[13px] gap-2 transition-all disabled:opacity-20">
           {state.isRendering ? (<><Loader2 className="w-4 h-4 animate-spin" /><span>Rendering...</span></>) : (<><span>Generate Render</span><ArrowRight className="w-4 h-4" /></>)}
         </Button>
+
+        {!state.modelImage && (
+          <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center">
+            Upload a model screenshot in the Geometry & View node first.
+          </p>
+        )}
       </div>
     </NodeShell>
   );

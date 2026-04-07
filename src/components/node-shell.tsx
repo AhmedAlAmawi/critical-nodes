@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CircleDot } from "lucide-react";
+import { Check, CircleDot, SkipForward } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NodeShellProps {
@@ -10,7 +10,8 @@ interface NodeShellProps {
   icon: React.ReactNode;
   totalFields: number;
   completedFields: number;
-  locked?: boolean;
+  onSkip?: () => void;
+  skipped?: boolean;
   children: React.ReactNode;
 }
 
@@ -21,7 +22,8 @@ export function NodeShell({
   icon,
   totalFields,
   completedFields,
-  locked,
+  onSkip,
+  skipped,
   children,
 }: NodeShellProps) {
   const progress = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
@@ -29,10 +31,8 @@ export function NodeShell({
 
   return (
     <div className="space-y-5">
-      {/* Big header */}
       <div className="relative">
         <div className="flex items-start gap-4">
-          {/* Big number */}
           <div className="relative shrink-0">
             <span className="text-[40px] font-display leading-none text-foreground/[0.04] select-none">
               {number}
@@ -52,7 +52,6 @@ export function NodeShell({
           </div>
         </div>
 
-        {/* Completion bar */}
         {totalFields > 0 && (
           <div className="mt-4 flex items-center gap-3">
             <div className="flex-1 h-1 rounded-full bg-foreground/[0.06] overflow-hidden">
@@ -74,16 +73,26 @@ export function NodeShell({
         )}
       </div>
 
-      {locked && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-warm/[0.06] border border-warm/20">
-          <Check className="w-3.5 h-3.5 text-warm" />
-          <span className="text-[11px] text-warm font-mono tracking-wider uppercase">
-            Locked
+      {skipped && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/[0.06] border border-amber-500/20">
+          <SkipForward className="w-3.5 h-3.5 text-amber-500" />
+          <span className="text-[11px] text-amber-600 dark:text-amber-400 font-mono tracking-wider uppercase">
+            Skipped — return anytime to strengthen this node
           </span>
         </div>
       )}
 
       {children}
+
+      {onSkip && !allComplete && (
+        <button
+          onClick={onSkip}
+          className="w-full flex items-center justify-center gap-2 py-2 text-[11px] text-muted-foreground/60 hover:text-muted-foreground transition-colors"
+        >
+          <SkipForward className="w-3 h-3" />
+          Skip — I&apos;ll return to this later
+        </button>
+      )}
     </div>
   );
 }
@@ -93,11 +102,13 @@ interface ChallengeCardProps {
   hint?: string;
   filled?: boolean;
   errors?: string[];
+  warnings?: string[];
   children: React.ReactNode;
 }
 
-export function ChallengeCard({ label, hint, filled, errors, children }: ChallengeCardProps) {
+export function ChallengeCard({ label, hint, filled, errors, warnings, children }: ChallengeCardProps) {
   const hasError = errors && errors.length > 0;
+  const hasWarning = warnings && warnings.length > 0;
 
   return (
     <div className={cn(
@@ -136,6 +147,12 @@ export function ChallengeCard({ label, hint, filled, errors, children }: Challen
       {errors?.map((e, i) => (
         <p key={i} className="text-[11px] text-destructive mt-2 pl-7">
           {e}
+        </p>
+      ))}
+
+      {hasWarning && !hasError && warnings.map((w, i) => (
+        <p key={i} className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 pl-7">
+          {w}
         </p>
       ))}
     </div>

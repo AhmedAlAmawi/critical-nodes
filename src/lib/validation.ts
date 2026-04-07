@@ -1,10 +1,10 @@
 import vagueWordsConfig from "@/config/vague-words.json";
 
-export const MIN_CHAR_COUNT = 40;
+export const MIN_CHAR_COUNT = 10;
 
 export function checkMinLength(value: string, min = MIN_CHAR_COUNT): string | null {
   if (!value || value.trim().length < min) {
-    return `Must be at least ${min} characters. Currently ${value?.trim().length ?? 0}.`;
+    return `Consider expanding this field (currently ${value?.trim().length ?? 0} characters).`;
   }
   return null;
 }
@@ -34,6 +34,27 @@ export function validateTextField(
   const vagueError = checkVagueWords(value);
   if (vagueError) errors.push(vagueError);
   return errors;
+}
+
+export interface SoftValidationResult {
+  warnings: string[];
+  isPresent: boolean;
+}
+
+export function validateTextFieldSoft(
+  value: string,
+  fieldName: string,
+  min = MIN_CHAR_COUNT
+): SoftValidationResult {
+  if (!value || value.trim() === "") {
+    return { warnings: [`${fieldName} is empty — completing it will strengthen your visualization decisions.`], isPresent: false };
+  }
+  const warnings: string[] = [];
+  const lengthHint = checkMinLength(value, min);
+  if (lengthHint) warnings.push(lengthHint);
+  const vagueHint = checkVagueWords(value);
+  if (vagueHint) warnings.push(vagueHint);
+  return { warnings, isPresent: true };
 }
 
 export function validateRequired(value: string, fieldName: string): string | null {

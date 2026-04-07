@@ -82,7 +82,7 @@ export function SessionList() {
     <div className="space-y-5">
       <div>
         <h2 className="font-display text-lg text-foreground">Sessions</h2>
-        <p className="text-[12px] text-muted-foreground mt-0.5">Each session is a gated validation process.</p>
+        <p className="text-[12px] text-muted-foreground mt-0.5">Each session guides you through structured visualization decisions.</p>
       </div>
 
       <Button onClick={() => dispatch({ type: "CREATE_SESSION" })} className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 font-medium text-[13px] gap-2">
