@@ -7,6 +7,7 @@
 
 import { redirect } from "next/navigation";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { PortalHeader } from "@/components/portal-header";
 
 export default async function FacultyLayout({
   children,
@@ -19,5 +20,10 @@ export default async function FacultyLayout({
   const role = u?.publicMetadata?.role as "faculty" | "student" | undefined;
   if (!role) redirect("/select-role");
   if (role !== "faculty") redirect("/studio");
-  return <>{children}</>;
+  return (
+    <>
+      <PortalHeader homeHref="/faculty" label="Faculty" />
+      {children}
+    </>
+  );
 }
