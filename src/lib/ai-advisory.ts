@@ -75,5 +75,58 @@ export async function evaluateSketch(
   return result.feedback;
 }
 
+/**
+ * v3 grounded mentor call. Use this from any v2 advisory hook that has a
+ * server-side sessionId (e.g. when running inside /studio/[id]/visualize).
+ * Returns the grounded feedback + chunk citations so callers can render the
+ * "cited n sources" chip.
+ *
+ * Falls back to a v2-style ungrounded summary by calling /api/advisory if
+ * sessionId is not provided.
+ */
+export async function groundedMentor(args: {
+  sessionId?: number;
+  nodeId: string;
+  step?: string;
+  prompt: string;
+  query?: string;
+  temperature?: number;
+  maxTokens?: number;
+}): Promise<{
+  feedback: string;
+  citations: Array<{ chunkId: number; sourceId: number; page: number | null }>;
+  fallback?: boolean;
+}> {
+  if (!args.sessionId) {
+    // No session context — caller is the standalone v2 path. Return an empty
+    // grounded shape so the chip just doesn't appear.
+    return { feedback: "", citations: [], fallback: true };
+  }
+  try {
+    const res = await fetch("/api/mentor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId: args.sessionId,
+        nodeId: args.nodeId,
+        step: args.step,
+        prompt: args.prompt,
+        query: args.query,
+        temperature: args.temperature ?? 0.4,
+        maxTokens: args.maxTokens ?? 400,
+      }),
+    });
+    if (!res.ok) throw new Error(`mentor ${res.status}`);
+    return (await res.json()) as {
+      feedback: string;
+      citations: Array<{ chunkId: number; sourceId: number; page: number | null }>;
+      fallback?: boolean;
+    };
+  } catch (err) {
+    console.warn(`[ai-advisory] groundedMentor failed: ${(err as Error).message}`);
+    return { feedback: "", citations: [], fallback: true };
+  }
+}
+
 export { ADVISORY_MODEL };
 export type { AdvisoryRequest };

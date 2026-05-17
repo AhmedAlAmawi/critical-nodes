@@ -87,16 +87,12 @@ export default async function StudioHome() {
                     {a.due_at ? ` · due ${new Date(a.due_at).toLocaleDateString()}` : ""}
                   </div>
                 </div>
-                <form action={`/api/sessions`} method="POST">
-                  {/* The button below is replaced by NewSessionButton-style client-side
-                      POST in production; this is here as a server-rendered fallback link. */}
-                  <Link
-                    href={`/studio/new?assignmentId=${a.assignment_id}`}
-                    className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-800"
-                  >
-                    Start
-                  </Link>
-                </form>
+                <Link
+                  href={`/studio/new?assignmentId=${a.assignment_id}`}
+                  className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-stone-800"
+                >
+                  Start
+                </Link>
               </li>
             ))}
           </ul>

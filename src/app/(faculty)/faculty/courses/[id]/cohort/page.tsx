@@ -21,9 +21,11 @@ type SessionState = {
   assignment_id: number | null;
   assignment_title: string | null;
   status: string;
-  node_id: string;
+  node_id: string | null;
   completed_at: string | null;
 };
+
+type LatestSession = { student_id: number; session_id: number };
 
 const NODES = [
   "concept",
@@ -76,6 +78,16 @@ export default async function CohortPage({
     matrix.set(key, r.completed_at ? "completed" : "in-progress");
   }
 
+  // Latest session per student for click-through.
+  const latest = (await sql`
+    SELECT DISTINCT ON (student_id) student_id, id AS session_id
+    FROM sessions WHERE course_id = ${courseId}
+    ORDER BY student_id, started_at DESC
+  `) as unknown as LatestSession[];
+  const sessionByStudent = new Map<number, number>(
+    latest.map((l) => [Number(l.student_id), Number(l.session_id)]),
+  );
+
   return (
     <main className="min-h-screen px-6 py-10 max-w-7xl mx-auto">
       <header className="mb-6">
@@ -106,30 +118,56 @@ export default async function CohortPage({
               </tr>
             </thead>
             <tbody>
-              {students.map((s) => (
-                <tr key={s.student_id} className="border-t border-stone-100">
-                  <td className="px-3 py-2 sticky left-0 bg-white truncate max-w-[200px]">
-                    {s.display_name ?? s.email ?? `Student #${s.student_id}`}
-                  </td>
-                  {NODES.map((n) => {
-                    const state = matrix.get(`${s.student_id}:${n}`) ?? "not-started";
-                    return (
-                      <td key={n} className="px-2 py-2">
-                        <span
-                          className={`inline-block rounded-full w-3 h-3 ${
-                            state === "completed"
-                              ? "bg-green-500"
-                              : state === "in-progress"
-                                ? "bg-amber-400"
-                                : "bg-stone-200"
-                          }`}
-                          title={state}
-                        />
+              {students.map((s) => {
+                const sid = sessionByStudent.get(Number(s.student_id));
+                const href = sid
+                  ? `/faculty/courses/${courseId}/sessions/${sid}`
+                  : null;
+                const Wrapper: React.FC<{ children: React.ReactNode }> = ({
+                  children,
+                }) =>
+                  href ? (
+                    <Link
+                      href={href}
+                      className="contents hover:bg-stone-50"
+                      aria-label={`Open session ${sid}`}
+                    >
+                      {children}
+                    </Link>
+                  ) : (
+                    <>{children}</>
+                  );
+                return (
+                  <tr
+                    key={s.student_id}
+                    className="border-t border-stone-100 hover:bg-stone-50"
+                  >
+                    <Wrapper>
+                      <td className="px-3 py-2 sticky left-0 bg-white truncate max-w-[200px]">
+                        {s.display_name ?? s.email ?? `Student #${s.student_id}`}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                      {NODES.map((n) => {
+                        const state =
+                          matrix.get(`${s.student_id}:${n}`) ?? "not-started";
+                        return (
+                          <td key={n} className="px-2 py-2">
+                            <span
+                              className={`inline-block rounded-full w-3 h-3 ${
+                                state === "completed"
+                                  ? "bg-green-500"
+                                  : state === "in-progress"
+                                    ? "bg-amber-400"
+                                    : "bg-stone-200"
+                              }`}
+                              title={state}
+                            />
+                          </td>
+                        );
+                      })}
+                    </Wrapper>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -52,6 +52,16 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   const clerkUser = await currentUser();
+  const existingRole = clerkUser?.publicMetadata?.role as
+    | "faculty"
+    | "student"
+    | undefined;
+  if (existingRole) {
+    return NextResponse.json(
+      { error: "Role already assigned.", role: existingRole },
+      { status: 409 },
+    );
+  }
 
   // Persist on Clerk so middleware reads it without hitting our DB.
   const client = await clerkClient();

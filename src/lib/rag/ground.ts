@@ -44,22 +44,34 @@ export type GroundArgs<TBody> = {
   fallback: TBody;
 };
 
-function fetchImagePartFromBlob(
+async function fetchImagePartFromBlob(
   url: string,
 ): Promise<{ inlineData: { data: string; mimeType: string } } | null> {
-  return fetch(url)
-    .then(async (res) => {
-      if (!res.ok) return null;
-      const buf = Buffer.from(await res.arrayBuffer());
-      const mimeType = res.headers.get("content-type") ?? "image/jpeg";
-      return {
-        inlineData: {
-          data: buf.toString("base64"),
-          mimeType: mimeType.split(";")[0],
-        },
-      };
-    })
-    .catch(() => null);
+  try {
+    // Data URLs: parse inline, don't fetch.
+    if (url.startsWith("data:")) {
+      const m = /^data:([^;,]+)(?:;base64)?,(.*)$/.exec(url);
+      if (!m) return null;
+      const mimeType = m[1] || "image/jpeg";
+      const isBase64 = url.includes(";base64,");
+      const data = isBase64
+        ? m[2]
+        : Buffer.from(decodeURIComponent(m[2])).toString("base64");
+      return { inlineData: { data, mimeType } };
+    }
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    const mimeType = res.headers.get("content-type") ?? "image/jpeg";
+    return {
+      inlineData: {
+        data: buf.toString("base64"),
+        mimeType: mimeType.split(";")[0],
+      },
+    };
+  } catch {
+    return null;
+  }
 }
 
 function buildContextText(chunks: RankedChunk[]): string {

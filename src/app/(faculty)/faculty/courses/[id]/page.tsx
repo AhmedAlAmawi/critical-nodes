@@ -78,7 +78,7 @@ export default async function CourseDetail({
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
         <Card
           title="Material library"
           subtitle={`${sources.length} source${sources.length === 1 ? "" : "s"}`}
@@ -90,6 +90,12 @@ export default async function CourseDetail({
           subtitle={`${assignments.length} total · ${assignments.filter((a) => a.published_at).length} published`}
           href={`/faculty/courses/${courseId}/assignments`}
           cta="Manage assignments →"
+        />
+        <Card
+          title="Cohort progress"
+          subtitle="Per-student × per-node status"
+          href={`/faculty/courses/${courseId}/cohort`}
+          cta="Open matrix →"
         />
       </div>
 

@@ -16,12 +16,20 @@ import {
   AppContext,
   appReducer,
   initialState,
+  createEmptySession,
   getActiveSession,
-  loadSessions,
-  saveSessions,
   loadHistory,
   saveHistory,
   type NodeId,
+  type Session,
+  type IntentData,
+  type VisualPriorityData,
+  type ReferenceBreakdown,
+  type GeometryValidationData,
+  type MaterialJustification,
+  type LightingData,
+  type PromptFields,
+  type AuditData,
 } from "@/lib/store";
 import { Nav } from "@/components/nav";
 import { LivingCanvas } from "@/components/living-canvas";
@@ -39,20 +47,62 @@ export function VisualizeShell({ sessionId }: Props) {
   const [renderFullscreen, setRenderFullscreen] = useState(false);
   const session = getActiveSession(state);
 
-  // Bootstrap from localStorage (v2 path).
+  // Bootstrap from SERVER state, not localStorage. This is the v3 fix —
+  // /studio/[id]/visualize must hydrate the v2 reducer from session_node_state
+  // so the canvas renders the student's persisted Stage B work.
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    const sessions = loadSessions();
-    if (sessions.length > 0)
-      dispatch({ type: "LOAD_SESSIONS", payload: sessions });
-    const history = loadHistory();
-    if (history.length > 0)
-      dispatch({ type: "LOAD_HISTORY", payload: history });
-  }, []);
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/sessions/${sessionId}/state`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const j = (await res.json()) as {
+          session: { id: number; status: string };
+          states: Array<{ node_id: string; data: Record<string, unknown> | null }>;
+        };
+        if (cancelled) return;
+        const sid = String(sessionId);
+        const map: Record<string, Record<string, unknown> | null> = {};
+        for (const s of j.states) map[s.node_id] = s.data;
+        const built: Session = {
+          ...createEmptySession(`Session ${sessionId}`),
+          id: sid,
+          intent: (map.intent as IntentData | null) ?? null,
+          visualPriority:
+            (map.visualPriority as VisualPriorityData | null) ?? null,
+          referenceBreakdowns:
+            ((map.references as { breakdowns?: ReferenceBreakdown[] } | null)
+              ?.breakdowns ?? []),
+          geometryValidation:
+            (map.geometry as GeometryValidationData | null) ?? null,
+          materialJustifications:
+            ((map.materialsLight as {
+              materials?: MaterialJustification[];
+            } | null)?.materials ?? []),
+          lighting:
+            ((map.materialsLight as { lighting?: LightingData } | null)
+              ?.lighting ?? null),
+          promptFields: (map.prompt as PromptFields | null) ?? null,
+          audit: (map.audit as AuditData | null) ?? null,
+        };
+        dispatch({ type: "LOAD_SESSIONS", payload: [built] });
+        dispatch({ type: "SET_ACTIVE_SESSION", payload: sid });
+        const history = loadHistory();
+        if (history.length > 0)
+          dispatch({ type: "LOAD_HISTORY", payload: history });
+        setHydrated(true);
+      } catch (err) {
+        console.warn("[visualize-shell] hydrate failed:", err);
+        setHydrated(true); // open empty canvas as last resort
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
 
-  // Mirror to localStorage (kept for offline / continuity).
-  useEffect(() => {
-    saveSessions(state.sessions);
-  }, [state.sessions]);
+  // History only stays in localStorage for now — kept for v2 parity.
   useEffect(() => {
     if (state.history.length > 0) saveHistory(state.history);
   }, [state.history]);
@@ -109,6 +159,14 @@ export function VisualizeShell({ sessionId }: Props) {
   );
   const handleCloseDrawer = useCallback(() => setDrawerOpen(false), []);
   const showSessionList = !state.activeSessionId;
+
+  if (!hydrated) {
+    return (
+      <main className="min-h-screen grid place-items-center text-sm text-stone-500">
+        Loading session…
+      </main>
+    );
+  }
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

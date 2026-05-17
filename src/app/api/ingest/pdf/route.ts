@@ -61,7 +61,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   const sql = neon(process.env.DATABASE_URL!);
 
-  // Verify the course belongs to this faculty.
+  // Verify the course belongs to this faculty BEFORE eating an upload.
   const owns = (await sql`
     SELECT id FROM courses WHERE id = ${courseId} AND owner_id = ${user.id} LIMIT 1
   `) as Array<{ id: number }>;
@@ -69,7 +69,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Course not found" }, { status: 404 });
   }
 
-  // Upload to Blob first so we always have the original.
+  // Upload to Blob after ownership check.
   const buf = Buffer.from(await file.arrayBuffer());
   const blob = await put(`sources/${courseId}/${Date.now()}-${file.name}`, buf, {
     access: "public",

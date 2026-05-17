@@ -562,6 +562,11 @@ function ActSingle({
   onContinue: () => void;
 }) {
   const [ready, setReady] = useState(false);
+  async function onImage(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => update({ actImageUrl: String(reader.result) });
+    reader.readAsDataURL(file);
+  }
   if (!ready) {
     return (
       <div className="space-y-5 text-center">
@@ -585,6 +590,44 @@ function ActSingle({
         placeholder={phase.action.placeholder}
         className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm focus:border-stone-400 focus:outline-none"
       />
+
+      <details className="rounded-xl border border-stone-200 bg-white p-3 text-sm">
+        <summary className="cursor-pointer text-stone-700">
+          {data.actImageUrl ? "Image attached — replace?" : "Optionally attach an image"}
+        </summary>
+        <div className="mt-3 space-y-3">
+          {data.actImageUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={data.actImageUrl}
+              alt="Act image"
+              className="rounded-lg max-h-60 object-contain bg-stone-50 w-full"
+            />
+          ) : null}
+          <label className="block rounded-lg border border-dashed border-stone-300 bg-white p-4 text-center text-xs text-stone-500 cursor-pointer hover:border-stone-500">
+            Drop or click
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onImage(f);
+              }}
+            />
+          </label>
+          {data.actImageUrl && (
+            <button
+              type="button"
+              onClick={() => update({ actImageUrl: null })}
+              className="text-xs text-stone-500 underline"
+            >
+              Remove image
+            </button>
+          )}
+        </div>
+      </details>
+
       <PrimaryButton onClick={onContinue} disabled={!data.actText.trim()}>
         Continue to Reflect →
       </PrimaryButton>
@@ -902,47 +945,55 @@ function ReflectStep({
     );
   }
 
-  if (stage === "mentor") {
-    if (loadingMentor) {
-      return (
-        <Centered>
-          <p>Getting mentor feedback…</p>
-        </Centered>
-      );
-    }
-    if (data.aiFeedback === null) {
-      // Trigger the call exactly once.
-      setLoadingMentor(true);
-      const promptText = [
-        `Phase: ${phase.title}`,
-        `Student's thinking: ${Object.values(data.thinkAnswers).join(" / ")}`,
-        `Student's output: ${data.actText}`,
-        `Student's reflection: ${Object.values(data.reflectAnswers).join(" / ")}`,
-      ].join("\n");
-      fetch("/api/mentor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          nodeId: phase.id,
-          step: "reflect-end",
-          prompt: promptText,
-          query: `${data.actText}\n\n${Object.values(data.thinkAnswers).slice(0, 3).join(" ")}`,
-          temperature: 0.7,
-        }),
+  // Effect: fire the mentor call exactly once when we enter the 'mentor' stage
+  // and don't yet have feedback. This used to live in the render path which
+  // caused setState-during-render. Now safe.
+  useEffect(() => {
+    if (stage !== "mentor") return;
+    if (data.aiFeedback !== null) return;
+    if (loadingMentor) return;
+    setLoadingMentor(true);
+    const promptText = [
+      `Phase: ${phase.title}`,
+      `Student's thinking: ${Object.values(data.thinkAnswers).join(" / ")}`,
+      `Student's output: ${data.actText}`,
+      `Student's reflection: ${Object.values(data.reflectAnswers).join(" / ")}`,
+    ].join("\n");
+    fetch("/api/mentor", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sessionId,
+        nodeId: phase.id,
+        step: "reflect-end",
+        prompt: promptText,
+        query: `${data.actText}\n\n${Object.values(data.thinkAnswers)
+          .slice(0, 3)
+          .join(" ")}`,
+        temperature: 0.7,
+      }),
+    })
+      .then(async (r) => {
+        const j = (await r.json().catch(() => ({}))) as {
+          feedback?: string;
+          citations?: Array<{
+            chunkId: number;
+            sourceId: number;
+            page: number | null;
+          }>;
+        };
+        update({
+          aiFeedback: j.feedback ?? "",
+          aiFeedbackCitations: j.citations ?? [],
+        });
       })
-        .then(async (r) => {
-          const j = (await r.json().catch(() => ({}))) as {
-            feedback?: string;
-            citations?: Array<{ chunkId: number; sourceId: number; page: number | null }>;
-          };
-          update({
-            aiFeedback: j.feedback ?? "",
-            aiFeedbackCitations: j.citations ?? [],
-          });
-        })
-        .catch(() => update({ aiFeedback: "" }))
-        .finally(() => setLoadingMentor(false));
+      .catch(() => update({ aiFeedback: "" }))
+      .finally(() => setLoadingMentor(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage]);
+
+  if (stage === "mentor") {
+    if (loadingMentor || data.aiFeedback === null) {
       return (
         <Centered>
           <p>Getting mentor feedback…</p>
@@ -1011,6 +1062,10 @@ function SynthesisStep({
 
   const [refining, setRefining] = useState(false);
 
+  // Fire the refinement once on mount when no AI statement has been saved.
+  // Dependency on `template` is intentional: if upstream Think answers change,
+  // we re-derive — but the `data.aiConceptStatement !== null` guard prevents
+  // accidental re-fires once we have a result.
   useEffect(() => {
     if (data.aiConceptStatement !== null) return;
     if (!template) return;
@@ -1035,7 +1090,7 @@ function SynthesisStep({
       .catch(() => update({ aiConceptStatement: template }))
       .finally(() => setRefining(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [template, data.aiConceptStatement]);
 
   const statement = data.aiConceptStatement ?? template;
   const suggestions = spatialTranslationFor(`${Q3} ${Q5} ${data.actText}`);
