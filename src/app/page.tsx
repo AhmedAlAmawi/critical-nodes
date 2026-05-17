@@ -1,124 +1,49 @@
-"use client";
+/**
+ * Public landing. Signed-in users are routed to their role's portal:
+ *   faculty → /faculty   student → /studio   no-role → /select-role
+ */
 
-import { useReducer, useEffect, useState, useCallback } from "react";
-import { Wand2 } from "lucide-react";
-import {
-  AppContext,
-  appReducer,
-  initialState,
-  getActiveSession,
-  loadSessions,
-  saveSessions,
-  loadHistory,
-  saveHistory,
-  type NodeId,
-} from "@/lib/store";
-import { Nav } from "@/components/nav";
-import { LivingCanvas } from "@/components/living-canvas";
-import { FormDrawer } from "@/components/form-drawer";
-import { NodeExitSummary } from "@/components/node-exit-summary";
-import { RenderResult } from "@/components/render-result";
-import { SettingsDialog } from "@/components/settings-dialog";
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { auth, currentUser } from "@clerk/nextjs/server";
 
-export default function StudioPage() {
-  const [state, dispatch] = useReducer(appReducer, initialState);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [renderFullscreen, setRenderFullscreen] = useState(false);
-  const session = getActiveSession(state);
+export const dynamic = "force-dynamic";
 
-  useEffect(() => {
-    const sessions = loadSessions();
-    if (sessions.length > 0) dispatch({ type: "LOAD_SESSIONS", payload: sessions });
-    const history = loadHistory();
-    if (history.length > 0) dispatch({ type: "LOAD_HISTORY", payload: history });
-  }, []);
-
-  useEffect(() => {
-    saveSessions(state.sessions);
-  }, [state.sessions]);
-
-  useEffect(() => {
-    if (state.history.length > 0) saveHistory(state.history);
-  }, [state.history]);
-
-  // Auto-open drawer when a session is selected and no session was active before
-  useEffect(() => {
-    if (state.activeSessionId && !drawerOpen) {
-      setDrawerOpen(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.activeSessionId]);
-
-  // Close drawer when exit summary appears (node just completed)
-  useEffect(() => {
-    if (state.showExitSummary) {
-      setDrawerOpen(false);
-    }
-  }, [state.showExitSummary]);
-
-  const handleOpenDrawer = useCallback((nodeId: NodeId) => {
-    dispatch({ type: "SET_ACTIVE_NODE", payload: nodeId });
-    setDrawerOpen(true);
-  }, [dispatch]);
-
-  const handleCloseDrawer = useCallback(() => {
-    setDrawerOpen(false);
-  }, []);
-
-  const showSessionList = !state.activeSessionId;
+export default async function Landing() {
+  const { userId } = await auth();
+  if (userId) {
+    const u = await currentUser();
+    const role = u?.publicMetadata?.role as "faculty" | "student" | undefined;
+    if (!role) redirect("/select-role");
+    redirect(role === "faculty" ? "/faculty" : "/studio");
+  }
 
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
-      <div className="h-screen overflow-hidden flex flex-col pt-[52px]">
-        {/* Living Canvas -- full screen background */}
-        <main className="flex-1 overflow-hidden flex flex-col min-h-0">
-          {showSessionList ? (
-            <LivingCanvas onOpenDrawer={handleOpenDrawer} onOpenRenderFullscreen={() => setRenderFullscreen(true)} />
-          ) : (
-            <LivingCanvas onOpenDrawer={handleOpenDrawer} onOpenRenderFullscreen={() => setRenderFullscreen(true)} />
-          )}
-        </main>
+    <main className="min-h-screen flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="max-w-2xl space-y-6">
+        <h1 className="text-4xl sm:text-5xl font-serif tracking-tight">
+          Critical Nodes
+        </h1>
+        <p className="text-stone-600 text-lg leading-relaxed">
+          The entire lifecycle of design for the student — from framing the
+          problem to producing the AI-mediated visualization, grounded in your
+          faculty&rsquo;s own academic material.
+        </p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <Link
+            href="/sign-in"
+            className="rounded-lg border border-stone-300 bg-white px-5 py-2.5 text-sm font-medium text-stone-800 hover:border-stone-500"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/sign-up"
+            className="rounded-lg bg-stone-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-stone-800"
+          >
+            Get started
+          </Link>
+        </div>
       </div>
-
-      {/* Form Drawer -- slides over canvas */}
-      <FormDrawer
-        open={drawerOpen || showSessionList}
-        onClose={handleCloseDrawer}
-        activeNode={state.activeNode}
-        showSessionList={showSessionList}
-      />
-
-      {/* Nav with integrated node progress */}
-      <Nav
-        onOpenSettings={() => setSettingsOpen(true)}
-        onOpenDrawer={handleOpenDrawer}
-        session={session}
-      />
-
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
-
-      {/* Exit summary modal */}
-      {state.showExitSummary && <NodeExitSummary onContinue={handleOpenDrawer} />}
-
-      {/* Render fullscreen lightbox */}
-      {renderFullscreen && (
-        <RenderResult mode="fullscreen" onClose={() => setRenderFullscreen(false)} />
-      )}
-
-      {/* Dev: Mock Fill button */}
-      {process.env.NODE_ENV === "development" && session && (
-        <button
-          onClick={() => {
-            dispatch({ type: "MOCK_FILL_SESSION" });
-            setDrawerOpen(false);
-          }}
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-mono tracking-wide uppercase bg-warm/10 text-warm border border-warm/20 hover:bg-warm/20 transition-colors shadow-lg backdrop-blur-sm"
-        >
-          <Wand2 className="w-3.5 h-3.5" />
-          Mock Fill
-        </button>
-      )}
-    </AppContext.Provider>
+    </main>
   );
 }

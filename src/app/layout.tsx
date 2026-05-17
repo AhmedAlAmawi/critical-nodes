@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit, Playfair_Display, Geist_Mono } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -33,13 +34,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${outfit.variable} ${playfair.variable} ${geistMono.variable} h-full`}
-    >
-      <body className="min-h-full bg-canvas text-foreground antialiased">
-        <TooltipProvider delay={200}>{children}</TooltipProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html
+        lang="en"
+        className={`${outfit.variable} ${playfair.variable} ${geistMono.variable} h-full`}
+      >
+        <body className="min-h-full bg-canvas text-foreground antialiased">
+          <TooltipProvider delay={200}>{children}</TooltipProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
