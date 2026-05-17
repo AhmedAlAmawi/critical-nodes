@@ -1,0 +1,27 @@
+{
+  "lawson-how-designers-think": {
+    "title": "How Designers Think",
+    "author": "Bryan Lawson",
+    "focus": "Design cognition, problem framing, and the structure of design thinking"
+  },
+  "ching-form-space-order": {
+    "title": "Architecture: Form, Space & Order",
+    "author": "Francis D.K. Ching",
+    "focus": "Visual grammar of architecture — form, space, order, and movement"
+  },
+  "zumthor-thinking-architecture": {
+    "title": "Thinking Architecture",
+    "author": "Peter Zumthor",
+    "focus": "The inner logic of architectural concepts and atmosphere"
+  },
+  "pallasmaa-eyes-of-the-skin": {
+    "title": "The Eyes of the Skin",
+    "author": "Juhani Pallasmaa",
+    "focus": "Multi-sensory experience and haptic dimension of architecture"
+  },
+  "lynch-image-of-the-city": {
+    "title": "The Image of the City",
+    "author": "Kevin Lynch",
+    "focus": "Spatial legibility, paths, edges, districts, nodes, and landmarks"
+  }
+}
