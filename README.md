@@ -1,56 +1,73 @@
-# Critical Nodes — Design Visualization Discipline
+# Critical Nodes v3
 
-A structured visualization discipline tool that helps students articulate, justify, and align visual decisions when using AI in design education.
+The entire lifecycle of design for the student — grounded in your faculty's own material.
 
-Critical Nodes guides students through a 7-node workflow — from intent definition through visual priority, reference analysis, geometry validation, material & lighting decisions, prompt construction, and reflective post-render audit. Each node builds on the last, teaching students to think deliberately about every design decision before generating AI-mediated architectural visualizations.
+Critical Nodes v3 fuses:
+
+- **Malzama** — the pedagogical micro-flow `Orient → Sketch → Think → Act → Reflect → Synthesis` (Concept + Zoning phases).
+- **Critical Nodes v2** — the 7-node AI-render discipline (Intent → Visual Priority → References → Geometry → Material/Light → Prompt → Audit).
+- **Spec Studio's retrieval kernel** — multimodal Jina CLIP v2 + pgvector ANN + Gemini 2.5 Flash re-rank with strict-JSON schema and always-on fallback.
+- **Faculty Portal** — upload PDFs / slides / images, build assignments scoped to specific chunks, evaluate student work against that material.
+
+Full design spec at [`critical-nodes-v3.md`](critical-nodes-v3.md) (1,200+ lines).
+Source investigations: [`malzama-investigation.md`](malzama-investigation.md), [`spec-studio-investigation.md`](spec-studio-investigation.md).
+
+## Tech stack
+
+- **Next.js 16** App Router (`proxy.ts` middleware naming) + React 19 + Tailwind v4
+- **Neon Postgres + pgvector** (`@neondatabase/serverless` + drizzle-orm)
+- **Vercel Blob** for faculty uploads + per-page rasters + renders
+- **Clerk** for auth + faculty/student roles
+- **Gemini 2.5 Flash / Pro** via `@google/genai`; **Nano Banana 2 / Pro** for image gen
+- **Jina CLIP v2** for embeddings (1024d, image + text shared space)
 
 ## Setup
 
 ```bash
 npm install
 cp .env.example .env.local
-```
-
-Add your Gemini API key to `.env.local`:
-
-```
-GEMINI_API_KEY=your_key_here
-```
-
-Get a key from [Google AI Studio](https://aistudio.google.com/apikey).
-
-```bash
+# fill in DATABASE_URL, BLOB_READ_WRITE_TOKEN, CLERK_*, GEMINI_API_KEY, JINA_API_KEY
+npm run db:migrate
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000).
+## Scripts
 
-## Nodes
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Start dev server (Turbopack) |
+| `npm run build` | Production build |
+| `npm run db:generate` | Generate SQL migrations from Drizzle schema |
+| `npm run db:migrate` | Apply all SQL migrations (pgvector ext + tables + indexes) |
+| `npm run db:push` | Drizzle push (dev-only short-circuit) |
+| `npm run db:studio` | Drizzle Studio |
+| `npm run smoke:rag` | Offline RAG smoke test — 5 deterministic assertions per §14 |
+| `npm run smoke:routes` | Manual route reachability check against `APP_URL` |
 
-1. **Design Mentor** — Articulate foundational intent through Socratic reflection
-2. **Visual Priority Locator** — Identify what deserves visualization
-3. **Reference Deconstruction** — Analytically deconstruct visual references
-4. **Geometry & View Validation** — Upload 3D model and validate camera view
-5. **Material & Light Validation** — Justify materials and define lighting logic
-6. **Prompt Architecture** — Construct the render prompt (structure → reference → vision)
-7. **Alignment Audit** — Reflect on the render against declared intent
+## Routes
 
-## AI Features
+| Surface | Path |
+|---|---|
+| Public | `/`, `/sign-in`, `/sign-up`, `/select-role` |
+| Faculty | `/faculty`, `/faculty/courses/[id]/{sources,assignments,cohort,evaluations}` |
+| Student | `/studio`, `/studio/[id]/{concept,zoning,visualize,audit}` |
+| API | `/api/{rag,ingest,mentor,audit,evaluate,sessions,courses,evaluations,auth}` |
 
-- **Concept Clarity Summary** — AI evaluates your intent and provides feedback
-- **Reference Alignment Alerts** — Advisory when references contradict intent
-- **Material-Light Interaction Checks** — Flags inconsistencies between materials and lighting
-- **Sketch Evaluation** — Upload hand-drawn sketches for AI feedback
+## Acceptance smokes (§14 of the v3 spec)
 
-## Models
+- **RAG smoke** — `npm run smoke:rag` against a Neon database. Five assertions on the retrieve/rerank/ground contract; no external AI API needed.
+- **Routes smoke** — `npm run smoke:routes` against a running dev server. Confirms every public + auth-gated route is reachable.
 
-- **Nano Banana 2** (`gemini-3.1-flash-image-preview`) — fast, cost-efficient
-- **Nano Banana Pro** (`gemini-3-pro-image-preview`) — highest quality
+## Implementation phases (one commit each)
 
-## Tech Stack
+1. Foundation (Clerk + Drizzle + Postgres schema + role-select)
+2. RAG kernel (port spec-studio → pgvector)
+3. Mixed-media ingestion (PDF + image + link; PPTX/EPUB stubbed)
+4. Faculty portal MVP (course list, course detail, sources, assignments)
+5. Student Stage B (sessions API, useSessionState hook, mentor route, visualize shell)
+6. Student Stage A (malzama Concept + Zoning phase content + runner)
+7. Final cross-stage Alignment Audit (Prompt #9)
+8. Faculty evaluation + cohort + override UI (Prompt #11)
+9. Acceptance smoke tests (smoke-rag + smoke-routes)
 
-- Next.js 16 (App Router, TypeScript)
-- Tailwind CSS v4, shadcn/ui
-- Framer Motion
-- Google Gemini API (`@google/genai`)
-- Outfit + Playfair Display typography
+See `critical-nodes-v3.md` §18 for the implementation order rationale.
