@@ -5,8 +5,15 @@
  * Required env: DATABASE_URL_UNPOOLED (or DATABASE_URL).
  */
 
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { defineConfig } from "drizzle-kit";
+
+for (const f of [".env.local", ".env"]) {
+  const p = join(process.cwd(), f);
+  if (existsSync(p)) loadEnv({ path: p, override: false });
+}
 
 const url =
   process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL ?? "";

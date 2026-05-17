@@ -13,8 +13,15 @@
  * external API needed.
  */
 
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { neon } from "@neondatabase/serverless";
+
+for (const f of [".env.local", ".env"]) {
+  const p = join(process.cwd(), f);
+  if (existsSync(p)) loadEnv({ path: p, override: false });
+}
 import { rerank } from "../src/lib/rag/rerank";
 import { ground } from "../src/lib/rag/ground";
 import { searchByEmbedding } from "../src/lib/rag/db";

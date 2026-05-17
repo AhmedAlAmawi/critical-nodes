@@ -8,10 +8,17 @@
  * runs, and drizzle-kit doesn't model extensions.
  */
 
-import "dotenv/config";
-import { readFileSync, readdirSync } from "node:fs";
+import { config as loadEnv } from "dotenv";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { neon } from "@neondatabase/serverless";
+
+// Load .env.local first (Next.js convention), fall back to .env.
+const cwd = process.cwd();
+for (const f of [".env.local", ".env"]) {
+  const p = join(cwd, f);
+  if (existsSync(p)) loadEnv({ path: p, override: false });
+}
 
 async function main() {
   const url =
@@ -31,10 +38,25 @@ async function main() {
   for (const f of files) {
     console.log(`  → ${f}`);
     const body = readFileSync(join(dir, f), "utf8");
-    // Some drizzle migrations use --> statement-breakpoint as a separator.
-    const statements = body
-      .split(/-->\s*statement-breakpoint/i)
-      .map((s) => s.trim())
+
+    // Strip SQL line comments so they don't confuse the simple ; splitter
+    // we fall back to when there's no drizzle "--> statement-breakpoint".
+    // Important: only strip `-- ` (real SQL comments) — NEVER `-->` because
+    // that's drizzle's statement separator marker.
+    const cleaned = body
+      .split("\n")
+      .map((l) => l.replace(/^\s*--(?!>).*$/, ""))
+      .join("\n");
+
+    // Drizzle-generated migrations use --> statement-breakpoint between
+    // statements. Hand-written ones (extensions, pgvector indexes) don't —
+    // for those, fall back to splitting on `;` at end-of-statement.
+    const hasMarker = /-->\s*statement-breakpoint/i.test(cleaned);
+    const statements = (hasMarker
+      ? cleaned.split(/-->\s*statement-breakpoint/i)
+      : cleaned.split(/;\s*\n/)
+    )
+      .map((s) => s.trim().replace(/;\s*$/, ""))
       .filter(Boolean);
     for (const stmt of statements) {
       try {

@@ -10,7 +10,14 @@
  * 401 as "route reachable"; only 404 / 5xx are smoke failures.
  */
 
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
+for (const f of [".env.local", ".env"]) {
+  const p = join(process.cwd(), f);
+  if (existsSync(p)) loadEnv({ path: p, override: false });
+}
 
 const APP_URL = process.env.APP_URL ?? "http://localhost:3000";
 

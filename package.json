@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/db-migrate.ts",
+    "db:check": "tsx scripts/db-check.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "smoke:rag": "tsx scripts/smoke-rag.ts",
