@@ -40,13 +40,18 @@ export async function ingestPdf(args: {
     }
 
     log("loading PDF");
-    const doc = await getDocumentProxy(args.data);
+    // pdf.js transfers (detaches) the underlying ArrayBuffer to its worker on
+    // first parse, so `data` must not be handed to a second call. Copy once,
+    // parse once, and pass the document proxy to extractText.
+    const bytes = new Uint8Array(args.data.byteLength);
+    bytes.set(args.data);
+    const doc = await getDocumentProxy(bytes);
     const pageCount = doc.numPages;
     await setPageCount(args.sourceId, pageCount);
     log(`PDF has ${pageCount} pages`);
 
     // 1. Per-page text extraction (unpdf returns string[] with mergePages=false).
-    const { text } = await extractText(args.data, { mergePages: false });
+    const { text } = await extractText(doc, { mergePages: false });
     const perPageText: string[] = Array.isArray(text) ? (text as string[]) : [String(text)];
 
     // 2. Build chunk plan: per-page placeholder + text sub-chunks.
