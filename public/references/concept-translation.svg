@@ -1,0 +1,29 @@
+<svg width="640" height="300" viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="300" fill="#fafaf9"/>
+  <text x="320" y="26" text-anchor="middle" font-size="9" fill="#a8a29e" letter-spacing="3" font-family="system-ui,sans-serif">CONCEPT TO SPACE TRANSLATION</text>
+  <text x="130" y="56" text-anchor="middle" font-size="9" fill="#78716c" letter-spacing="2" font-family="system-ui,sans-serif">CONCEPT</text>
+  <path d="M 30 72 Q 70 64 115 71 Q 155 78 200 68 Q 218 64 240 70" stroke="#1c1917" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 42 97 Q 80 91 120 96 Q 162 101 202 93 Q 220 89 240 95" stroke="#1c1917" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 56 120 Q 92 115 130 119 Q 168 123 205 117 Q 222 114 240 119" stroke="#1c1917" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 72 142 Q 104 139 138 141 Q 172 143 204 138 Q 220 136 238 141" stroke="#57534e" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 92 164 Q 118 161 142 163 Q 166 165 188 161 Q 202 159 218 162" stroke="#78716c" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 114 184 Q 134 182 150 183 Q 166 184 178 181" stroke="#a8a29e" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <text x="130" y="214" text-anchor="middle" font-size="9" fill="#78716c" font-family="system-ui,sans-serif">Coastal erosion layers</text>
+  <text x="130" y="228" text-anchor="middle" font-size="9" fill="#a8a29e" font-family="system-ui,sans-serif">descent / stratification / edge</text>
+  <line x1="262" y1="136" x2="344" y2="136" stroke="#d6d3d1" stroke-width="1.5"/>
+  <polygon points="344,130 356,136 344,142" fill="#d6d3d1"/>
+  <text x="308" y="126" text-anchor="middle" font-size="8" fill="#a8a29e" font-family="system-ui,sans-serif" letter-spacing="1">becomes</text>
+  <text x="502" y="56" text-anchor="middle" font-size="9" fill="#78716c" letter-spacing="2" font-family="system-ui,sans-serif">SPACE</text>
+  <rect x="370" y="66" width="260" height="44" rx="2" fill="none" stroke="#1c1917" stroke-width="1.5"/>
+  <text x="500" y="86" text-anchor="middle" font-size="10" fill="#1c1917" font-family="system-ui,sans-serif">Entry / Seating Zones</text>
+  <text x="500" y="101" text-anchor="middle" font-size="8" fill="#78716c" font-family="system-ui,sans-serif">wide / social / arrival</text>
+  <rect x="392" y="124" width="216" height="40" rx="2" fill="none" stroke="#57534e" stroke-width="1.5"/>
+  <text x="500" y="143" text-anchor="middle" font-size="10" fill="#44403c" font-family="system-ui,sans-serif">Descending Lounge</text>
+  <text x="500" y="157" text-anchor="middle" font-size="8" fill="#78716c" font-family="system-ui,sans-serif">mid-level / transitional</text>
+  <rect x="430" y="178" width="140" height="38" rx="2" fill="#1c1917"/>
+  <text x="500" y="197" text-anchor="middle" font-size="10" fill="white" font-family="system-ui,sans-serif">Tide Pool Core</text>
+  <text x="500" y="211" text-anchor="middle" font-size="8" fill="#a8a29e" font-family="system-ui,sans-serif">narrow / intimate / still</text>
+  <text x="500" y="244" text-anchor="middle" font-size="9" fill="#a8a29e" font-family="system-ui,sans-serif">Structure derived from concept,</text>
+  <text x="500" y="258" text-anchor="middle" font-size="9" fill="#a8a29e" font-family="system-ui,sans-serif">not applied after the fact.</text>
+  <text x="320" y="286" text-anchor="middle" font-size="8" fill="#d6d3d1" font-style="italic" font-family="system-ui,sans-serif">Concept translation diagram - Interior Design Studio</text>
+</svg>

@@ -1,0 +1,41 @@
+<svg width="640" height="320" viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="320" fill="#fafaf9"/>
+  <text x="320" y="26" text-anchor="middle" font-size="9" fill="#a8a29e" letter-spacing="3" font-family="system-ui,sans-serif">SPATIAL HIERARCHY + CIRCULATION</text>
+  <!-- Entry circle -->
+  <circle cx="72" cy="170" r="36" fill="none" stroke="#1c1917" stroke-width="1.5"/>
+  <text x="72" y="166" text-anchor="middle" font-size="9" fill="#1c1917" font-family="system-ui,sans-serif">Entry</text>
+  <text x="72" y="180" text-anchor="middle" font-size="8" fill="#78716c" font-family="system-ui,sans-serif">arrival</text>
+  <!-- Entry to Primary -->
+  <line x1="108" y1="170" x2="178" y2="170" stroke="#d6d3d1" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <polygon points="178,164 190,170 178,176" fill="#d6d3d1"/>
+  <!-- Primary zone (large ellipse, center) -->
+  <ellipse cx="268" cy="170" rx="74" ry="74" fill="none" stroke="#1c1917" stroke-width="2"/>
+  <text x="268" y="164" text-anchor="middle" font-size="11" fill="#1c1917" font-family="system-ui,sans-serif">PRIMARY</text>
+  <text x="268" y="180" text-anchor="middle" font-size="9" fill="#78716c" font-family="system-ui,sans-serif">Social / Active</text>
+  <!-- Primary to Secondary (upper) -->
+  <line x1="312" y1="116" x2="378" y2="88" stroke="#d6d3d1" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <polygon points="374,82 386,86 380,97" fill="#d6d3d1"/>
+  <!-- Secondary zone -->
+  <ellipse cx="434" cy="76" rx="50" ry="50" fill="none" stroke="#57534e" stroke-width="1.5"/>
+  <text x="434" y="70" text-anchor="middle" font-size="9" fill="#44403c" font-family="system-ui,sans-serif">SECONDARY</text>
+  <text x="434" y="84" text-anchor="middle" font-size="8" fill="#78716c" font-family="system-ui,sans-serif">Focus / Work</text>
+  <!-- Primary to Quiet (lower) -->
+  <line x1="312" y1="224" x2="378" y2="252" stroke="#d6d3d1" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <polygon points="374,246 386,256 380,267" fill="#d6d3d1"/>
+  <!-- Quiet zone (filled, peripheral) -->
+  <ellipse cx="434" cy="266" rx="40" ry="40" fill="#1c1917"/>
+  <text x="434" y="261" text-anchor="middle" font-size="9" fill="white" font-family="system-ui,sans-serif">QUIET</text>
+  <text x="434" y="275" text-anchor="middle" font-size="8" fill="#a8a29e" font-family="system-ui,sans-serif">Private / Still</text>
+  <!-- Secondary to Service -->
+  <line x1="484" y1="76" x2="550" y2="76" stroke="#d6d3d1" stroke-width="1" stroke-dasharray="3,3"/>
+  <!-- Service zone (dashed, back-of-house) -->
+  <rect x="552" y="54" width="60" height="44" rx="3" fill="none" stroke="#c8c4c0" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="582" y="74" text-anchor="middle" font-size="8" fill="#a8a29e" font-family="system-ui,sans-serif">Service</text>
+  <text x="582" y="87" text-anchor="middle" font-size="7" fill="#c8c4c0" font-family="system-ui,sans-serif">back-of-house</text>
+  <!-- Zone labels below -->
+  <text x="72" y="222" text-anchor="middle" font-size="8" fill="#c8c4c0" font-family="system-ui,sans-serif">buffer</text>
+  <text x="268" y="262" text-anchor="middle" font-size="8" fill="#c8c4c0" font-family="system-ui,sans-serif">dominant</text>
+  <text x="434" y="136" text-anchor="middle" font-size="8" fill="#c8c4c0" font-family="system-ui,sans-serif">mid-energy</text>
+  <!-- Note -->
+  <text x="320" y="302" text-anchor="middle" font-size="8" fill="#d6d3d1" font-style="italic" font-family="system-ui,sans-serif">Bubble diagram - F.D.K. Ching, Architecture: Form, Space and Order</text>
+</svg>

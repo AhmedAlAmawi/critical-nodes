@@ -1,0 +1,53 @@
+<svg width="640" height="260" viewBox="0 0 640 260" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="260" fill="#fafaf9"/>
+  <text x="320" y="24" text-anchor="middle" font-size="9" fill="#a8a29e" letter-spacing="3" font-family="system-ui,sans-serif">SPATIAL SEQUENCE — THE JOURNEY IS THE DESIGN</text>
+
+  <!-- Sequence nodes -->
+  <!-- ENTRY -->
+  <circle cx="60" cy="130" r="28" fill="none" stroke="#1c1917" stroke-width="1.5"/>
+  <text x="60" y="126" text-anchor="middle" font-size="8" fill="#1c1917" font-family="system-ui,sans-serif">ENTRY</text>
+  <text x="60" y="138" text-anchor="middle" font-size="7" fill="#78716c" font-family="system-ui,sans-serif">arrival</text>
+
+  <!-- Arrow 1 -->
+  <line x1="88" y1="130" x2="128" y2="130" stroke="#d6d3d1" stroke-width="1.5"/>
+  <polygon points="128,124 140,130 128,136" fill="#d6d3d1"/>
+  <text x="114" y="120" text-anchor="middle" font-size="7" fill="#a8a29e" font-family="system-ui,sans-serif">threshold</text>
+
+  <!-- APPROACH -->
+  <circle cx="168" cy="130" r="34" fill="none" stroke="#78716c" stroke-width="1.5"/>
+  <text x="168" y="126" text-anchor="middle" font-size="8" fill="#44403c" font-family="system-ui,sans-serif">APPROACH</text>
+  <text x="168" y="138" text-anchor="middle" font-size="7" fill="#78716c" font-family="system-ui,sans-serif">transition</text>
+
+  <!-- Arrow 2 -->
+  <line x1="202" y1="130" x2="245" y2="130" stroke="#d6d3d1" stroke-width="1.5"/>
+  <polygon points="245,124 257,130 245,136" fill="#d6d3d1"/>
+
+  <!-- PRIMARY -->
+  <circle cx="296" cy="130" r="46" fill="none" stroke="#1c1917" stroke-width="2.5"/>
+  <text x="296" y="126" text-anchor="middle" font-size="10" fill="#1c1917" font-family="system-ui,sans-serif">PRIMARY</text>
+  <text x="296" y="140" text-anchor="middle" font-size="7" fill="#78716c" font-family="system-ui,sans-serif">main event</text>
+
+  <!-- Arrow 3 -->
+  <line x1="342" y1="130" x2="378" y2="130" stroke="#d6d3d1" stroke-width="1.5"/>
+  <polygon points="378,124 390,130 378,136" fill="#d6d3d1"/>
+
+  <!-- BUFFER -->
+  <circle cx="422" cy="130" r="30" fill="none" stroke="#a8a29e" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="422" y="126" text-anchor="middle" font-size="8" fill="#78716c" font-family="system-ui,sans-serif">BUFFER</text>
+  <text x="422" y="138" text-anchor="middle" font-size="7" fill="#a8a29e" font-family="system-ui,sans-serif">release</text>
+
+  <!-- Arrow 4 -->
+  <line x1="452" y1="130" x2="490" y2="130" stroke="#d6d3d1" stroke-width="1.5"/>
+  <polygon points="490,124 502,130 490,136" fill="#d6d3d1"/>
+
+  <!-- CORE -->
+  <circle cx="536" cy="130" r="52" fill="#1c1917"/>
+  <text x="536" y="126" text-anchor="middle" font-size="11" fill="white" font-family="system-ui,sans-serif">CORE</text>
+  <text x="536" y="142" text-anchor="middle" font-size="8" fill="#a8a29e" font-family="system-ui,sans-serif">destination</text>
+
+  <!-- Size / energy indicator below -->
+  <text x="320" y="200" text-anchor="middle" font-size="8" fill="#c8c4c0" font-family="system-ui,sans-serif">zone size = relative importance / energy level</text>
+
+  <text x="320" y="220" text-anchor="middle" font-size="8" fill="#d6d3d1" font-style="italic" font-family="system-ui,sans-serif">"The sequence of spaces is the experience." — Juhani Pallasmaa, The Eyes of the Skin</text>
+  <text x="320" y="236" text-anchor="middle" font-size="7" fill="#e7e5e4" font-family="system-ui,sans-serif">Entry, threshold, arrival, and core are choreographic decisions — not logistical ones.</text>
+</svg>

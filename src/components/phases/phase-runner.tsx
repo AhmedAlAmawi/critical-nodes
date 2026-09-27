@@ -1319,6 +1319,7 @@ function ReflectStep({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && draft.trim()) {
                   update({ reflectAnswers: { ...data.reflectAnswers, 97: draft.trim() } });
+                  setDraft("");
                   setStage("choice");
                 }
               }}
@@ -1329,6 +1330,7 @@ function ReflectStep({
               <PrimaryButton
                 onClick={() => {
                   update({ reflectAnswers: { ...data.reflectAnswers, 97: draft.trim() } });
+                  setDraft("");
                   setStage("choice");
                 }}
                 disabled={!draft.trim()}
@@ -1428,6 +1430,7 @@ function ReflectStep({
     const c = choice || (data.reflectAnswers[0] ?? "").split(" — ")[0];
     const stitched = c ? `${c} — ${draft.trim()}` : draft.trim();
     update({ reflectAnswers: { ...data.reflectAnswers, 0: stitched }, reflectIndex: 0 });
+    setDraft(data.reflectAnswers[1] ?? "");
     setStage("open");
   }
   function submitOpen() {
@@ -1435,6 +1438,7 @@ function ReflectStep({
     const i = openIdx;
     const isLastOpen = i === remaining.length - 1;
     update({ reflectAnswers: { ...data.reflectAnswers, [i + 1]: val } });
+    setDraft(data.reflectAnswers[i + 2] ?? "");
     if (isLastOpen) {
       update({ reflectIndex: i + 1 });
       setStage("mentor");
