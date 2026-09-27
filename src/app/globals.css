@@ -170,3 +170,51 @@
     background: oklch(0 0 0 / 14%);
   }
 }
+
+/* --- malzama-lineage micro-animations (phase runner) ----------------------- */
+@keyframes cn-step-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes cn-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.step-enter {
+  animation: cn-step-enter 320ms ease-out both;
+}
+.step-enter-slow {
+  animation: cn-step-enter 640ms ease-out both;
+}
+.response-reveal {
+  animation: cn-step-enter 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.fade-in {
+  animation: cn-fade-in 300ms ease-out both;
+}
+
+/* --- print (session receipt) ---------------------------------------------- */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  main {
+    padding-top: 0 !important;
+  }
+  a[href]::after {
+    content: none !important;
+  }
+}

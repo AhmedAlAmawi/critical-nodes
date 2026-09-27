@@ -1,8 +1,9 @@
 /**
  * POST /api/ingest/link
  *
- * Body: { courseId, url, title? }. Fetches the URL, strips HTML, chunks,
- * embeds. Synchronous because most pages are small.
+ * Body: { courseId, url, title? }. Fetches the URL, strips HTML, chunks and
+ * inserts rows (phase 1). The client then loops `/api/ingest/[id]/embed`
+ * to vectorise them (phase 2), exactly like PDFs.
  */
 
 import { NextResponse } from "next/server";
@@ -32,6 +33,12 @@ export async function POST(req: Request): Promise<NextResponse> {
       { status: 400 },
     );
   }
+  try {
+    const u = new URL(body.url);
+    if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("bad protocol");
+  } catch {
+    return NextResponse.json({ error: "Enter a full http(s) URL." }, { status: 400 });
+  }
   const sql = neon(process.env.DATABASE_URL!);
   const owns = (await sql`
     SELECT id FROM courses WHERE id = ${body.courseId} AND owner_id = ${user.id} LIMIT 1
@@ -47,11 +54,16 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   try {
     const result = await ingestLink({ sourceId, url: body.url });
-    return NextResponse.json({ ok: true, sourceId, ...result });
+    return NextResponse.json({
+      ok: true,
+      sourceId,
+      chunkCount: result.chunkCount,
+      embedPending: result.chunkCount,
+    });
   } catch (err) {
     return NextResponse.json(
       { ok: false, sourceId, error: (err as Error).message },
-      { status: 502 },
+      { status: 422 },
     );
   }
 }

@@ -47,7 +47,8 @@ export async function uploadBlob(
   buf: Buffer | Uint8Array,
   contentType = "image/jpeg",
 ): Promise<string> {
-  const blob = await put(pathname, buf, {
+  const body = Buffer.isBuffer(buf) ? buf : Buffer.from(buf);
+  const blob = await put(pathname, body, {
     access: "public",
     contentType,
     addRandomSuffix: true,

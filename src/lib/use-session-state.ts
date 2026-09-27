@@ -5,10 +5,14 @@
  * `getNode<T>(nodeId)` accessor and a debounced `setNode(nodeId, data)`
  * mutator that PATCHes `/api/sessions/[id]/state`.
  *
- * The v2 components (intent-form, visual-priority-locator, …) keep working
- * because their data shapes (IntentData, VisualPriorityData, …) are
- * persisted verbatim into the `data` jsonb column. The repointing is the
- * persistence layer only.
+ * `setNode` accepts either a full replacement value or an updater function
+ * `(prev) => next`. Updaters are applied against the *latest* in-memory value
+ * (including not-yet-flushed writes), so two rapid writes from stale React
+ * closures can no longer clobber each other — this was the root cause of
+ * Think/Reflect answers going missing in the phase runner.
+ *
+ * Flushes use `keepalive: true` and are force-flushed on `pagehide`, so a
+ * student closing the tab right after typing still gets their answer saved.
  */
 
 "use client";
@@ -30,16 +34,67 @@ type Loaded = {
   error?: string;
 };
 
+type Updater<T> = (prev: T | null) => T;
+
+const FLUSH_DEBOUNCE_MS = 400;
+
 export function useSessionState(sessionId: number) {
   const [loaded, setLoaded] = useState<Loaded>({
     status: "loading",
     session: null,
     states: {},
   });
+
+  // Latest known data per node — updated synchronously in setNode so that
+  // back-to-back writes compose correctly regardless of render timing.
+  const latestData = useRef<Map<string, unknown>>(new Map());
   const flushTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
   );
-  const pendingData = useRef<Map<string, unknown>>(new Map());
+  const pending = useRef<
+    Map<string, { data: unknown; completed?: boolean }>
+  >(new Map());
+
+  const flushNode = useCallback(
+    async (nodeId: string, keepalive = false) => {
+      const timer = flushTimers.current.get(nodeId);
+      if (timer) {
+        clearTimeout(timer);
+        flushTimers.current.delete(nodeId);
+      }
+      const entry = pending.current.get(nodeId);
+      if (!entry) return;
+      pending.current.delete(nodeId);
+      try {
+        await fetch(`/api/sessions/${sessionId}/state`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nodeId,
+            data: entry.data,
+            completed: entry.completed,
+          }),
+          keepalive,
+        });
+      } catch (err) {
+        console.warn(
+          `[useSessionState] flush failed for ${nodeId}: ${(err as Error).message}`,
+        );
+        // Re-queue so a later write (or pagehide) retries it.
+        if (!pending.current.has(nodeId)) pending.current.set(nodeId, entry);
+      }
+    },
+    [sessionId],
+  );
+
+  const flushAll = useCallback(
+    (keepalive = false) => {
+      for (const nodeId of Array.from(pending.current.keys())) {
+        void flushNode(nodeId, keepalive);
+      }
+    },
+    [flushNode],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +108,12 @@ export function useSessionState(sessionId: number) {
         };
         if (cancelled) return;
         const map: Record<string, NodeStateRow> = {};
-        for (const r of j.states) map[r.node_id] = r;
+        for (const r of j.states) {
+          map[r.node_id] = r;
+          if (!latestData.current.has(r.node_id)) {
+            latestData.current.set(r.node_id, r.data);
+          }
+        }
         setLoaded({ status: "ready", session: j.session, states: map });
       } catch (err) {
         if (cancelled) return;
@@ -70,6 +130,18 @@ export function useSessionState(sessionId: number) {
     };
   }, [sessionId]);
 
+  // Force-flush anything pending when the page is being hidden / closed.
+  useEffect(() => {
+    const onHide = () => flushAll(true);
+    window.addEventListener("pagehide", onHide);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") onHide();
+    });
+    return () => {
+      window.removeEventListener("pagehide", onHide);
+    };
+  }, [flushAll]);
+
   const getNode = useCallback(
     <T = unknown>(nodeId: string): T | null => {
       const row = loaded.states[nodeId];
@@ -79,8 +151,24 @@ export function useSessionState(sessionId: number) {
   );
 
   const setNode = useCallback(
-    (nodeId: string, data: unknown, opts?: { completed?: boolean }) => {
-      pendingData.current.set(nodeId, data);
+    <T = unknown>(
+      nodeId: string,
+      dataOrUpdater: T | Updater<T>,
+      opts?: { completed?: boolean },
+    ) => {
+      const prev = (latestData.current.get(nodeId) ?? null) as T | null;
+      const next =
+        typeof dataOrUpdater === "function"
+          ? (dataOrUpdater as Updater<T>)(prev)
+          : dataOrUpdater;
+      latestData.current.set(nodeId, next);
+
+      const prevPending = pending.current.get(nodeId);
+      pending.current.set(nodeId, {
+        data: next,
+        completed: opts?.completed || prevPending?.completed,
+      });
+
       // Optimistic local update.
       setLoaded((curr) => ({
         ...curr,
@@ -88,41 +176,25 @@ export function useSessionState(sessionId: number) {
           ...curr.states,
           [nodeId]: {
             node_id: nodeId,
-            data,
+            data: next,
             mentor_feedback: curr.states[nodeId]?.mentor_feedback ?? null,
             completed_at: opts?.completed
               ? new Date().toISOString()
-              : curr.states[nodeId]?.completed_at ?? null,
+              : (curr.states[nodeId]?.completed_at ?? null),
             updated_at: new Date().toISOString(),
           },
         },
       }));
 
       // Debounced server flush per node.
-      const prev = flushTimers.current.get(nodeId);
-      if (prev) clearTimeout(prev);
+      const prevTimer = flushTimers.current.get(nodeId);
+      if (prevTimer) clearTimeout(prevTimer);
       flushTimers.current.set(
         nodeId,
-        setTimeout(async () => {
-          const value = pendingData.current.get(nodeId);
-          pendingData.current.delete(nodeId);
-          try {
-            await fetch(`/api/sessions/${sessionId}/state`, {
-              method: "PATCH",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                nodeId,
-                data: value,
-                completed: opts?.completed,
-              }),
-            });
-          } catch (err) {
-            console.warn(`[useSessionState] flush failed: ${(err as Error).message}`);
-          }
-        }, 400),
+        setTimeout(() => void flushNode(nodeId), FLUSH_DEBOUNCE_MS),
       );
     },
-    [sessionId],
+    [flushNode],
   );
 
   return useMemo(
@@ -130,7 +202,8 @@ export function useSessionState(sessionId: number) {
       ...loaded,
       getNode,
       setNode,
+      flushAll,
     }),
-    [loaded, getNode, setNode],
+    [loaded, getNode, setNode, flushAll],
   );
 }

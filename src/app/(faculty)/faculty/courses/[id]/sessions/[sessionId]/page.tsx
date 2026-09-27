@@ -1,14 +1,19 @@
 /**
  * /faculty/courses/[id]/sessions/[sessionId]
  *
- * Read-only faculty view of a student's session — every node's state, every
- * mentor message, every render. Linked from the cohort matrix.
+ * Read-only faculty view of a student's session — the same receipt the
+ * student sees (every response, image, mentor note and render), plus the
+ * evaluation panel and the raw mentor-message log. Linked from the cohort
+ * matrix.
  */
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { neon } from "@neondatabase/serverless";
 import { requireRole } from "@/lib/auth";
+import { loadSessionReceipt } from "@/lib/receipt";
+import { SessionReceipt } from "@/components/receipt/session-receipt";
+import { ReceiptActions } from "@/components/receipt/receipt-actions";
 import { TriggerEvaluation } from "@/components/faculty/trigger-evaluation";
 
 export const dynamic = "force-dynamic";
@@ -23,12 +28,6 @@ type SessionRow = {
   display_name: string | null;
 };
 
-type State = {
-  node_id: string;
-  data: Record<string, unknown>;
-  completed_at: string | null;
-};
-
 type Mentor = {
   node_id: string;
   step: string | null;
@@ -36,8 +35,6 @@ type Mentor = {
   citations: Array<{ chunkId: number; sourceId: number; page: number | null }>;
   created_at: string;
 };
-
-type Render = { id: number; prompt: string; blob_url: string; created_at: string };
 
 type EvalRow = { id: number; created_at: string };
 
@@ -64,10 +61,8 @@ export default async function FacultySessionView({
   if (!sessRows[0]) notFound();
   const sess = sessRows[0];
 
-  const states = (await sql`
-    SELECT node_id, data, completed_at FROM session_node_state WHERE session_id = ${sid}
-    ORDER BY node_id
-  `) as unknown as State[];
+  const receipt = await loadSessionReceipt(sid);
+  if (!receipt) notFound();
 
   const mentor = (await sql`
     SELECT node_id, step, content, citations, created_at FROM mentor_messages
@@ -76,11 +71,6 @@ export default async function FacultySessionView({
     LIMIT 50
   `) as unknown as Mentor[];
 
-  const renders = (await sql`
-    SELECT id, prompt, blob_url, created_at FROM renders WHERE session_id = ${sid}
-    ORDER BY created_at DESC
-  `) as unknown as Render[];
-
   const evals = (await sql`
     SELECT id, created_at FROM evaluations WHERE session_id = ${sid}
     ORDER BY created_at DESC
@@ -88,20 +78,23 @@ export default async function FacultySessionView({
 
   return (
     <main className="min-h-screen px-6 py-10 max-w-5xl mx-auto">
-      <header className="mb-6">
-        <Link
-          href={`/faculty/courses/${courseId}/cohort`}
-          className="text-xs text-stone-500 hover:text-stone-900"
-        >
-          ← Cohort
-        </Link>
-        <h1 className="text-3xl font-serif mt-2">
-          {sess.display_name ?? `Student #${sess.student_id}`}
-        </h1>
-        <p className="text-xs text-stone-500 mt-1">
-          {sess.assignment_title ?? "Freeform"} ·{" "}
-          {new Date(sess.started_at).toLocaleString()} · {sess.status}
-        </p>
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-4 no-print">
+        <div>
+          <Link
+            href={`/faculty/courses/${courseId}/cohort`}
+            className="text-xs text-stone-500 hover:text-stone-900"
+          >
+            ← Cohort
+          </Link>
+          <h1 className="text-3xl font-serif mt-2">
+            {sess.display_name ?? `Student #${sess.student_id}`}
+          </h1>
+          <p className="text-xs text-stone-500 mt-1">
+            {sess.assignment_title ?? "Freeform"} ·{" "}
+            {new Date(sess.started_at).toLocaleString()} · {sess.status}
+          </p>
+        </div>
+        <ReceiptActions sessionId={sid} status={sess.status} canSubmit={false} missingRequired={[]} />
       </header>
 
       {sess.assignment_id && (
@@ -134,43 +127,13 @@ export default async function FacultySessionView({
         </section>
       )}
 
-      <section className="mb-8">
-        <h2 className="text-sm uppercase tracking-widest text-stone-500 mb-3">
-          Node states ({states.length})
-        </h2>
-        {states.length === 0 ? (
-          <p className="text-sm text-stone-500">No work yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {states.map((s) => (
-              <li
-                key={s.node_id}
-                className="rounded-2xl border border-stone-200 bg-white p-4"
-              >
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">{s.node_id}</span>
-                  <span
-                    className={`text-[10px] uppercase tracking-widest rounded-full px-2 py-0.5 ${
-                      s.completed_at
-                        ? "bg-green-50 text-green-700"
-                        : "bg-amber-50 text-amber-700"
-                    }`}
-                  >
-                    {s.completed_at ? "Completed" : "In progress"}
-                  </span>
-                </div>
-                <pre className="mt-2 text-xs whitespace-pre-wrap break-words text-stone-600 max-h-56 overflow-y-auto">
-                  {JSON.stringify(s.data, null, 2)}
-                </pre>
-              </li>
-            ))}
-          </ul>
-        )}
+      <section className="mb-10">
+        <SessionReceipt receipt={receipt} audience="faculty" />
       </section>
 
-      <section className="mb-8">
+      <section className="mb-8 no-print">
         <h2 className="text-sm uppercase tracking-widest text-stone-500 mb-3">
-          Mentor messages ({mentor.length})
+          Mentor message log ({mentor.length})
         </h2>
         {mentor.length === 0 ? (
           <p className="text-sm text-stone-500">None yet.</p>
@@ -208,31 +171,6 @@ export default async function FacultySessionView({
         )}
       </section>
 
-      {renders.length > 0 && (
-        <section>
-          <h2 className="text-sm uppercase tracking-widest text-stone-500 mb-3">
-            Renders ({renders.length})
-          </h2>
-          <ul className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {renders.map((r) => (
-              <li
-                key={r.id}
-                className="rounded-2xl border border-stone-200 bg-white overflow-hidden"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={r.blob_url}
-                  alt={r.prompt}
-                  className="w-full aspect-square object-cover bg-stone-100"
-                />
-                <p className="px-3 py-2 text-xs text-stone-600 line-clamp-2">
-                  {r.prompt}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </main>
   );
 }

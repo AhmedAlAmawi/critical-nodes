@@ -30,7 +30,6 @@ export function PortalHeader({ homeHref, label }: Props) {
     return (
       <div className="fixed top-3 right-3 z-[60]">
         <UserButton
-          afterSignOutUrl="/"
           appearance={{
             elements: { userButtonAvatarBox: "h-7 w-7" },
           }}
@@ -40,7 +39,10 @@ export function PortalHeader({ homeHref, label }: Props) {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-[60] flex items-center justify-between h-12 px-4 sm:px-6 bg-white/85 backdrop-blur border-b border-stone-200/80">
+    <>
+      {/* Spacer so page content starts below the fixed 48px bar. */}
+      <div className="h-12 no-print" aria-hidden />
+      <header className="no-print fixed top-0 left-0 right-0 z-[60] flex items-center justify-between h-12 px-4 sm:px-6 bg-white/85 backdrop-blur border-b border-stone-200/80">
       <Link
         href={homeHref}
         className="flex items-center gap-2 text-sm font-medium text-stone-800 hover:text-stone-900"
@@ -52,12 +54,12 @@ export function PortalHeader({ homeHref, label }: Props) {
       </Link>
       <div className="flex items-center gap-3">
         <UserButton
-          afterSignOutUrl="/"
           appearance={{
             elements: { userButtonAvatarBox: "h-7 w-7" },
           }}
         />
       </div>
     </header>
+    </>
   );
 }

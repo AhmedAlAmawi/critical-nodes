@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       model,
       sessionId,
     }: {
-      images?: string[];
+      images?: { data: string; mimeType: string }[];
       prompt?: string;
       aspectRatio?: string;
       imageSize?: string;

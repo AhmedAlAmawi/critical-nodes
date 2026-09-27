@@ -16,10 +16,22 @@ export const EMBEDDING_DIM = 1024;
 const JINA_URL = "https://api.jina.ai/v1/embeddings";
 const MODEL = "jina-clip-v2";
 
+// Image inputs: ~4k tokens each → the 22s/8-image cadence from spec-studio.
 const BATCH_SIZE = Number(process.env.JINA_BATCH_SIZE ?? 8);
 const BATCH_DELAY_MS = Number(process.env.JINA_BATCH_DELAY_MS ?? 22_000);
-const RATE_LIMIT_COOLDOWN_MS = 65_000;
-const MAX_ATTEMPTS = 6;
+
+// Text inputs: a ~500-token chunk costs ~500 tokens, i.e. ~8x cheaper than an
+// image. Using the image cadence for text made a 60-page PDF take >20 minutes
+// and blow through the function timeout — the #1 reason faculty uploads never
+// finished. 16 chunks / 4s ≈ 120k tokens/min worst case, which the 429 retry
+// below absorbs on the free tier and which is nowhere near paid-tier limits.
+const TEXT_BATCH_SIZE = Number(process.env.JINA_TEXT_BATCH_SIZE ?? 16);
+const TEXT_BATCH_DELAY_MS = Number(process.env.JINA_TEXT_BATCH_DELAY_MS ?? 4_000);
+
+const RATE_LIMIT_COOLDOWN_MS = Number(
+  process.env.JINA_RATE_LIMIT_COOLDOWN_MS ?? 20_000,
+);
+const MAX_ATTEMPTS = 4;
 
 type JinaInput = { image: string } | { text: string };
 
@@ -105,14 +117,20 @@ async function callJina(inputs: JinaInput[]): Promise<Float32Array[]> {
   return out;
 }
 
-async function embedBatched(inputs: JinaInput[]): Promise<Float32Array[]> {
+async function embedBatched(
+  inputs: JinaInput[],
+  opts: { batchSize: number; delayMs: number } = {
+    batchSize: BATCH_SIZE,
+    delayMs: BATCH_DELAY_MS,
+  },
+): Promise<Float32Array[]> {
   const out: Float32Array[] = [];
-  for (let i = 0; i < inputs.length; i += BATCH_SIZE) {
-    const slice = inputs.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < inputs.length; i += opts.batchSize) {
+    const slice = inputs.slice(i, i + opts.batchSize);
     const res = await retry(() => callJina(slice));
     out.push(...res);
-    if (i + BATCH_SIZE < inputs.length) {
-      await sleep(BATCH_DELAY_MS);
+    if (i + opts.batchSize < inputs.length) {
+      await sleep(opts.delayMs);
     }
   }
   return out;
@@ -183,9 +201,15 @@ export async function embedImageUrlsBatch(
   return embedBatched(urls.map((u) => ({ image: thumbnailUrl(u) })));
 }
 
-/** Batched text embedding for ingestion. */
+/** Batched text embedding for ingestion (text cadence, not image cadence). */
 export async function embedTextsBatch(
   texts: string[],
 ): Promise<Float32Array[]> {
-  return embedBatched(texts.map((t) => ({ text: t })));
+  return embedBatched(
+    texts.map((t) => ({ text: t || " " })),
+    { batchSize: TEXT_BATCH_SIZE, delayMs: TEXT_BATCH_DELAY_MS },
+  );
 }
+
+/** How many text chunks one `/embed` call should take on (2 batches). */
+export const EMBED_CHUNKS_PER_CALL = TEXT_BATCH_SIZE * 2;

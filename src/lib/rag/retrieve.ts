@@ -37,7 +37,7 @@ export async function retrieve(
 
   // 2. ANN search with scope filter applied post-fetch.
   const tAnn = Date.now();
-  let vecHits = await searchByEmbedding({
+  const vecHits = await searchByEmbedding({
     query: qVec,
     courseId: opts.courseId,
     sourceIds: opts.sourceIds,

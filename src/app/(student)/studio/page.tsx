@@ -3,9 +3,11 @@
  */
 
 import Link from "next/link";
+import { Suspense } from "react";
 import { neon } from "@neondatabase/serverless";
 import { requireRole } from "@/lib/auth";
 import { NewSessionButton } from "@/components/studio/new-session-button";
+import { JoinCourseForm } from "@/components/studio/join-course-form";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,8 @@ type Available = {
   course_title: string;
   due_at: string | null;
 };
+
+type Enrolled = { course_id: number; title: string; code: string | null };
 
 export default async function StudioHome() {
   const user = await requireRole("student");
@@ -57,17 +61,56 @@ export default async function StudioHome() {
     ORDER BY a.due_at NULLS LAST
   `) as unknown as Available[];
 
+  const enrolled = (await sql`
+    SELECT c.id AS course_id, c.title, c.code
+    FROM enrollments e JOIN courses c ON c.id = e.course_id
+    WHERE e.student_id = ${user.id}
+    ORDER BY e.invited_at DESC
+  `) as unknown as Enrolled[];
+
   return (
     <main className="min-h-screen px-6 py-10 max-w-5xl mx-auto">
-      <header className="mb-8 flex items-end justify-between">
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-widest text-stone-500">
             Studio
           </p>
           <h1 className="text-3xl font-serif mt-1">Your sessions</h1>
         </div>
-        <NewSessionButton />
+        <Suspense>
+          <NewSessionButton label={enrolled.length === 1 ? `New session · ${enrolled[0].title}` : "New freeform session"} />
+        </Suspense>
       </header>
+
+      <section className="mb-10 rounded-2xl border border-stone-200 bg-white p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-sm font-medium">Your courses</h2>
+            {enrolled.length === 0 ? (
+              <p className="text-xs text-stone-500 mt-1">
+                Not enrolled yet. Enter the course code your instructor shared to see assignments and have your work grounded in their material.
+              </p>
+            ) : (
+              <ul className="mt-2 space-y-1.5">
+                {enrolled.map((c) => (
+                  <li key={c.course_id} className="flex items-center gap-3 text-sm">
+                    <span className="truncate">{c.title}</span>
+                    {c.code && <span className="text-[10px] uppercase tracking-widest text-stone-400">{c.code}</span>}
+                    {enrolled.length > 1 && (
+                      <Suspense>
+                        <NewSessionButton courseId={c.course_id} label="New session" compact />
+                      </Suspense>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <Suspense>
+            <JoinCourseForm />
+          </Suspense>
+        </div>
+      </section>
 
       {available.length > 0 && (
         <section className="mb-10">

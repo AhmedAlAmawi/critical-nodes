@@ -4,8 +4,10 @@
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { neon } from "@neondatabase/serverless";
 import { requireRole } from "@/lib/auth";
+import { CopyField } from "@/components/faculty/copy-field";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +64,15 @@ export default async function CourseDetail({
     ORDER BY created_at DESC
   `) as unknown as AssignmentRow[];
 
+  const enrolledCount = (await sql`
+    SELECT COUNT(*) AS c FROM enrollments WHERE course_id = ${courseId}
+  `) as Array<{ c: number | string }>;
+
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  const joinLink = host ? `${proto}://${host}/studio?join=${encodeURIComponent(course.slug)}` : `/studio?join=${course.slug}`;
+
   return (
     <main className="min-h-screen px-6 py-10 max-w-6xl mx-auto">
       <header className="mb-8">
@@ -77,6 +88,21 @@ export default async function CourseDetail({
           )}
         </div>
       </header>
+
+      <section className="mb-8 rounded-2xl border border-stone-200 bg-white p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-medium">Invite students</h2>
+            <p className="text-xs text-stone-500 mt-1">
+              Students enter this code (or open the link) from their Studio to join. {Number(enrolledCount[0]?.c ?? 0)} enrolled so far.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 min-w-0 w-full sm:w-auto">
+            <CopyField label="Course code" value={course.slug} />
+            <CopyField label="Join link" value={joinLink} />
+          </div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
         <Card

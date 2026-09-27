@@ -70,6 +70,8 @@ export type PhaseState = {
   actText: string;
   actImageUrl: string | null;
   diagramOutputs: Record<string, { text: string; image: string | null }>;
+  /** Current mission index inside the Act → Missions flow (resumable). */
+  missionIndex: number;
   reflectIndex: number;
   reflectAnswers: Record<string | number, string>;
   aiFeedback: string | null;
@@ -89,6 +91,7 @@ export function emptyPhaseState(): PhaseState {
     actText: "",
     actImageUrl: null,
     diagramOutputs: {},
+    missionIndex: 0,
     reflectIndex: 0,
     reflectAnswers: {},
     aiFeedback: null,
